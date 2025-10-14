@@ -61,6 +61,52 @@ if ($method === 'GET') {
     exit; // 処理を終了
 }
 
+//====================================================
+// POSTリクエストの処理 (新規スレッド作成)
+//====================================================
+if ($method === 'POST') {
+    // クライアントから送信されたJSONデータを受け取る
+    $json_data = file_get_contents('php://input');
+    $data = json_decode($json_data, true);
+
+    // バリデーション: titleとbodyが空でないかチェック
+    if (empty($data['title']) || empty($data['body'])) {
+        header('HTTP/1.1 400 Bad Request');
+        echo json_encode(['error' => 'タイトルと本文は必須です。']);
+        exit;
+    }
+
+    try {
+        // ログイン中のユーザーIDをセッションから取得
+        $user_id = $_SESSION['user']['id'];
+        $title = $data['title'];
+        $body = $data['body'];
+
+        // データベースに新しいスレッド（親投稿）を挿入するSQL文
+        $sql = "INSERT INTO posts (user_id, title, body) VALUES (:user_id, :title, :body)";
+        
+        $stmt = $pdo->prepare($sql);
+
+        // パラメータをバインド(紐づけ)
+        // ex) :titleには$titleという変数の内容を必ず入れるように指示
+        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->bindValue(':title', $title, PDO::PARAM_STR);
+        $stmt->bindValue(':body', $body, PDO::PARAM_STR);
+        
+        $stmt->execute(); // 実行
+
+        // 成功したことをクライアントに伝える
+        header('HTTP/1.1 201 Created');
+        echo json_encode(['message' => '新しいスレッドが作成されました。']);
+
+    } catch (Exception $e) {
+        // エラーが発生した場合
+        header('HTTP/1.1 500 Internal Server Error');
+        echo json_encode(['error' => 'データベースエラー: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
 //-----------------------------
 // GET, POST以外の不正なリクエストに対する処理
 //-----------------------------

@@ -3,70 +3,92 @@
 // 統合APIファイル (api.php)
 //---------------------------------------------
 
-//-----------------------------
 // 共通設定の読み込み
-//-----------------------------
 require_once __DIR__ . '/auth.php';
 #require_login(); // ログイン必須
 require_once __DIR__ . '/db.php';
 
-//-----------------------------
 // レスポンスの形式をJSONに指定
-//-----------------------------
 header('Content-Type: application/json; charset=utf-8');
 
-//-----------------------------
-// リクエストメソッドを取得
-//-----------------------------
+// リクエストメソッドを取得 -- リクエストがGETかPOSTの振り分け
 $method = $_SERVER['REQUEST_METHOD'];
 
 //====================================================
-// GETリクエストの処理 (一覧取得)
+// GETリクエストの処理 (一覧取得 または 返信一覧取得)
 //====================================================
 if ($method === 'GET') {
+    // データベース操作はエラーが発生する可能性があるため、try...catchで囲む
     try {
-        // postsテーブルから親投稿(parentpost_idがNULL)のみを取得するSQL文
-        // user_idを元にusersテーブルをJOINし、投稿者名(username)も取得する
-        $sql = "
-            SELECT
-                p.id,
-                p.user_id,
-                p.title,
-                p.body,
-                p.created_at,
-                p.updated_at,
-                u.username
-            FROM
-                posts AS p
-            JOIN
-                users AS u ON p.user_id = u.id
-            WHERE
-                p.parentpost_id IS NULL
-            ORDER BY
-                p.created_at DESC
-        ";
+        // --- ここから処理の分岐 ---
+        // URLに "?parent_id=5" のようなパラメータが付いているか確認
+        // isset()でチェックすることで、処理を分岐させる
+        
+        // (A) パラメータがある場合：特定の親投稿に紐づく「返信一覧」を返す
+        if (isset($_GET['parent_id'])) {
+            
+            // URLから親投稿のIDを取得。念のため(int)で整数に変換し、安全性を高める
+            $parent_id = (int)$_GET['parent_id'];
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute();
-        $threads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // データベースに送る命令文（SQL）を準備
+            // parentpost_idが、指定された親投稿のIDと一致する投稿（=返信）だけに絞り込む
+            // 返信は会話の流れが分かりやすいように、古い順（昇順 ASC）で並び替える
+            $sql = "
+                SELECT 
+                    p.id, 
+                    p.user_id, 
+                    p.body, 
+                    p.created_at, 
+                    u.username
+                FROM posts AS p
+                JOIN users AS u ON p.user_id = u.id
+                WHERE p.parentpost_id = :parent_id
+                ORDER BY p.created_at ASC
+            ";
+            
+            // SQLインジェクション対策として、まずSQL文の"型枠"だけをデータベースに送って準備
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':parent_id', $parent_id, PDO::PARAM_INT); // 型枠の「:parent_id」の部分に、実際の値を安全に埋め込む（バインドする）
+            $stmt->execute(); // 実行
+            $replies = $stmt->fetchAll(PDO::FETCH_ASSOC); // 実行結果（返信データ）を全て取得し、PHPの配列に格納する
 
-        // 取得したデータをJSON形式でクライアントに返す
-        echo json_encode($threads);
+            echo json_encode($replies); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
+        
+        // (B) パラメータがない場合：これまで通りの「親スレッド一覧」を返す
+        } else {
+            // データベースに送る命令文（SQL）を準備
+            // parentpost_idがNULLの投稿（=親投稿）だけに絞り込む
+            // 親投稿は、新しいものが一番上に表示されるように降順（DESC）で並び替える
+
+            $sql = "
+                SELECT p.id, p.user_id, p.title, p.body, p.created_at, p.updated_at, u.username
+                FROM posts AS p
+                JOIN users AS u ON p.user_id = u.id
+                WHERE p.parentpost_id IS NULL
+                ORDER BY p.created_at DESC
+            ";
+            
+            // SQLを実行する（ユーザーからの入力値がないため、prepare/bindは必須ではないが、統一性のために使用）
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+            $threads = $stmt->fetchAll(PDO::FETCH_ASSOC); // 実行結果（親スレッドデータ一式）を取得し、PHPの配列に格納
+            
+            echo json_encode($threads); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
+        }
 
     } catch (Exception $e) {
-        // エラーが発生した場合は、ステータスコード500でエラーメッセージを返す
+        // もしtryブロックの中でデータベースエラーなどが発生したら、ここで処理を中断
         header('HTTP/1.1 500 Internal Server Error');
-        echo json_encode(['error' => 'データベースエラー: ' . $e->getMessage()]);
+        echo json_encode(['error' => 'データベースエラー: ' . $e->getMessage()]); // エラーが発生したことを示すJSONをブラウザに返す
     }
-    exit; // 処理を終了
+    exit; // GETリクエストの処理はここで終了
 }
 
 //====================================================
 // POSTリクエストの処理 (新規スレッド作成)
 //====================================================
 if ($method === 'POST') {
-    // クライアントから送信されたJSONデータを受け取る
-    $json_data = file_get_contents('php://input');
+    $json_data = file_get_contents('php://input'); // クライアントから送信されたJSONデータを受け取る
     $data = json_decode($json_data, true);
 
     // バリデーション: titleとbodyが空でないかチェック

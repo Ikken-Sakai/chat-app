@@ -34,7 +34,7 @@ require_once __DIR__ . '/auth.php';
 
         // HTML要素を取得
         const $loadingMessage = document.getElementById('loading-message');
-        const $threadList = document.getElementById('thread-list'); //HTMLの箱
+        const $threadList = document.getElementById('thread-list'); //HTMLの箱(掲示板全体)
 
         /**
          * APIからスレッド一覧を取得して画面に表示する非同期関数
@@ -84,7 +84,7 @@ require_once __DIR__ . '/auth.php';
                     </div>
                     <div class="thread-footer">
                         <span>投稿日時: ${thread.created_at}</span>
-                        <button class="show-replies-btn" data-thread-id="${thread.id}">返信を表示</button>
+                        <button class="show-replies-btn" data-thread-id="${thread.id}">返信〇件</button>
                     </div>
                     <div class="replies-container" id="replies-for-${thread.id}" style="display: none;"></div>
                 `;

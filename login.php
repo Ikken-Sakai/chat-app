@@ -13,7 +13,7 @@ require_once __DIR__ . '/db.php';
 // 既にログイン済みなら index.php へリダイレクト
 //-----------------------------
 if (isset($_SESSION['user'])) {
-    header('Location: index.php');
+    header('Location: thread_list.php');
     exit;
 }
 

@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = (int)$user['id'];
             $_SESSION['last_active'] = time();
 
-            header('Location: index.php');
+            header('Location: thread_list.php');
             exit;
         } else {
             $error = 'ユーザー名またはパスワードが正しくありません。';
@@ -61,7 +61,7 @@ header('Content-Type: text/html; charset=UTF-8');
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ログイン |　スレッドアプリ/title>
+  <title>ログイン | スレッドアプリ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css"> </head>
 <body>
@@ -89,7 +89,10 @@ header('Content-Type: text/html; charset=UTF-8');
       <a href="register.php" class="btn btn-secondary">新規登録</a>
     </form>
 
+    
   </div>
+
+  
 
 </body>
 </html>

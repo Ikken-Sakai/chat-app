@@ -5,7 +5,7 @@
 
 // 共通設定の読み込み
 require_once __DIR__ . '/auth.php';
-#require_login(); // ログイン必須
+require_login(); // ログイン必須
 require_once __DIR__ . '/db.php';
 
 // レスポンスの形式をJSONに指定

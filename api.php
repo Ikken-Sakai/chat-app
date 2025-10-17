@@ -59,11 +59,27 @@ if ($method === 'GET') {
             // 親投稿は、新しいものが一番上に表示されるように降順（DESC）で並び替える
 
             $sql = "
-                SELECT p.id, p.user_id, p.title, p.body, p.created_at, p.updated_at, u.username
-                FROM posts AS p
-                JOIN users AS u ON p.user_id = u.id
-                WHERE p.parentpost_id IS NULL
-                ORDER BY p.created_at DESC
+                SELECT 
+                    p.id, 
+                    p.user_id, 
+                    p.title,
+                    p.body, 
+                    p.created_at, 
+                    p.updated_at,
+                    u.username,
+                    COUNT(r.id) AS reply_count
+                FROM 
+                    posts AS p
+                JOIN 
+                    users AS u ON p.user_id = u.id
+                LEFT JOIN 
+                    posts AS r ON p.id = r.parentpost_id
+                WHERE 
+                    p.parentpost_id IS NULL
+                GROUP BY 
+                    p.id, u.username
+                ORDER BY 
+                    p.created_at ASC
             ";
             
             // SQLを実行する（ユーザーからの入力値がないため、prepare/bindは必須ではないが、統一性のために使用）
@@ -155,8 +171,3 @@ if ($method === 'POST') {
     }
     exit;
 }
-
-//-----------------------------
-// GET, POST以外の不正なリクエストに対する処理
-//-----------------------------
-send_json_response(['error' => '許可されていないメソッドです。'], 405);

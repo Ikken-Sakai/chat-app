@@ -84,7 +84,7 @@ require_once __DIR__ . '/auth.php';
                     </div>
                     <div class="thread-footer">
                         <span>投稿日時: ${thread.created_at}</span>
-                        <button class="show-replies-btn" data-thread-id="${thread.id}">返信〇件</button>
+                        <button class="show-replies-btn" data-thread-id="${thread.id}" data-reply-count="${thread.reply_count}">返信${thread.reply_count}件</button>
                     </div>
                     <div class="replies-container" id="replies-for-${thread.id}" style="display: none;"></div>
                 `;
@@ -125,7 +125,8 @@ require_once __DIR__ . '/auth.php';
 
             if (repliesContainer.style.display === 'block') {
                 repliesContainer.style.display = 'none';
-                button.textContent = '返信〇件';
+                const replyCount = button.dataset.replyCount; // data属性から件数を取得
+                button.textContent = `返信${replyCount}件`;   // 取得した件数でテキストを生成
                 return;
             }
 

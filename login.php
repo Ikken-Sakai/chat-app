@@ -10,7 +10,7 @@ session_start();
 require_once __DIR__ . '/db.php';
 
 //-----------------------------
-// 既にログイン済みなら index.php へリダイレクト
+// 既にログイン済みなら thread_list.php へリダイレクト
 //-----------------------------
 if (isset($_SESSION['user'])) {
     header('Location: thread_list.php');
@@ -61,7 +61,7 @@ header('Content-Type: text/html; charset=UTF-8');
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ログイン | 自己紹介アプリ</title>
+  <title>ログイン |　スレッドアプリ/title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css"> </head>
 <body>
@@ -89,78 +89,7 @@ header('Content-Type: text/html; charset=UTF-8');
       <a href="register.php" class="btn btn-secondary">新規登録</a>
     </form>
 
-    <?php if (!empty($allUsers)): ?>
-      <table class="user-table" id="userTable">
-        <thead>
-          <tr>
-            <th>登録されているユーザー</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($allUsers as $u): ?>
-            <tr>
-              <td><?= htmlspecialchars($u, ENT_QUOTES, 'UTF-8') ?></td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-      
-      <button id="showMoreBtn" class="btn-show-more">さらに表示</button>
-
-    <?php endif; ?>
   </div>
-
-  <script>
-  document.addEventListener('DOMContentLoaded', () => {
-      // 定数: 初期表示件数と追加表示件数
-      const INITIAL_SHOW = 5;
-      const SHOW_PER_CLICK = 10;
-
-      // HTML要素を取得
-      const userTable = document.getElementById('userTable');
-      const showMoreBtn = document.getElementById('showMoreBtn');
-
-      // テーブルやボタンが存在しない、またはユーザーが5人以下の場合は処理を中断
-      if (!userTable || !showMoreBtn || userTable.querySelectorAll('tbody tr').length <= INITIAL_SHOW) {
-          // もしユーザーが5人以下なら、最初から全て表示されているので何もしない
-          if(userTable && userTable.querySelectorAll('tbody tr').length <= INITIAL_SHOW) {
-              // ボタンは不要なので非表示のまま
-          }
-          return;
-      }
-
-      const allRows = userTable.querySelectorAll('tbody tr');
-      const totalRows = allRows.length;
-      let visibleCount = 0;
-
-      // 表示状態を更新する関数
-      function updateVisibility() {
-          // 全ての行をループ
-          allRows.forEach((row, index) => {
-              // 表示件数内であれば表示、それ以外は非表示
-              row.style.display = (index < visibleCount) ? '' : 'none';
-          });
-
-          // 全ての行が表示されたら「さらに表示」ボタンを隠す
-          if (visibleCount >= totalRows) {
-              showMoreBtn.style.display = 'none';
-          } else {
-              showMoreBtn.style.display = 'block';
-          }
-      }
-
-      // 「さらに表示」ボタンのクリックイベント
-      showMoreBtn.addEventListener('click', () => {
-          // 表示件数を増やす
-          visibleCount += SHOW_PER_CLICK;
-          updateVisibility();
-      });
-
-      // --- 初期化 ---
-      visibleCount = INITIAL_SHOW;
-      updateVisibility();
-  });
-  </script>
 
 </body>
 </html>

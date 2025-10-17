@@ -4,7 +4,7 @@ require_once __DIR__ . '/db.php';
 
 // 既にログイン済みの場合はリダイレクト
 if (isset($_SESSION['user'])) {
-    header('Location: index.php');
+    header('Location: thread_list.php');
     exit;
 }
 
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>新規登録 | 自己紹介アプリ</title>
+  <title>新規登録 | スレッドアプリ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -75,8 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="password" id="password_confirm" name="password_confirm" required>
       </div>
 
-      <button type="submit" class="btn btn-success">登録する</button>
-      <a href="login.php" class="btn btn-secondary" style="margin-top: 10px;">ログイン画面に戻る</a>
+      <button type="submit" class="btn btn-success">登録</button>
+      <a href="login.php" class="btn btn-secondary" style="margin-top: 10px;">戻る</a>
     </form>
   </div>
 </body>

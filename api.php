@@ -89,35 +89,64 @@ if ($method === 'POST') {
     $json_data = file_get_contents('php://input'); // クライアントから送信されたJSONデータを受け取る
     $data = json_decode($json_data, true);
 
-    // バリデーション: titleとbodyが空でないかチェック
-    if (empty($data['title']) || empty($data['body'])) {
-        header('HTTP/1.1 400 Bad Request');
-        echo json_encode(['error' => 'タイトルと本文は必須です。']);
-        exit;
-    }
-
     try {
-        // ログイン中のユーザーIDをセッションから取得
-        $user_id = $_SESSION['user']['id'];
-        $title = $data['title'];
-        $body = $data['body'];
+        $user_id = $_SESSION['user']['id']; // ログイン中のユーザーIDは共通で取得
 
-        // データベースに新しいスレッド（親投稿）を挿入するSQL文
-        $sql = "INSERT INTO posts (user_id, title, body) VALUES (:user_id, :title, :body)";
-        
-        $stmt = $pdo->prepare($sql);
+        // (A) parentpost_idが含まれている場合、返信投稿として処理
+        if (isset($data['parentpost_id']) && !empty($data['parentpost_id'])) {
+            // バリデーション: 返信内容(body)が空でないかチェック
+            if (empty($data['body'])) {
+                header('HTTP/1.1 400 Bad Request');
+                echo json_encode(['error' => '返信内容を入力してください。']);
+                exit;
+            }
 
-        // パラメータをバインド(紐づけ)
-        // ex) :titleには$titleという変数の内容を必ず入れるように指示
-        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->bindValue(':title', $title, PDO::PARAM_STR);
-        $stmt->bindValue(':body', $body, PDO::PARAM_STR);
-        
-        $stmt->execute(); // 実行
+            $body = $data['body'];
+            $parent_id = (int)$data['parentpost_id'];
 
-        // 成功したことをクライアントに伝える
-        header('HTTP/1.1 201 Created');
-        echo json_encode(['message' => '新しいスレッドが作成されました。']);
+            // 返信をデータベースに挿入するSQL文
+            $sql = "INSERT INTO posts (user_id, body, parentpost_id) VALUES (:user_id, :body, :parentpost_id)";
+            
+            $stmt = $pdo->prepare($sql);
+
+            $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindValue(':body', $body, PDO::PARAM_STR);
+            $stmt->bindValue(':parentpost_id', $parent_id, PDO::PARAM_INT);
+            
+            $stmt->execute();
+
+            // 成功したことをクライアントに伝える
+            header('HTTP/1.1 201 Created');
+            echo json_encode(['message' => '返信が投稿されました。']);
+
+
+        // (B) parentpost_idが含まれていない場合、新規スレッド作成として処理
+        } else {
+            // バリデーション: titleとbodyが空でないかチェック
+            if (empty($data['title']) || empty($data['body'])) {
+                header('HTTP/1.1 400 Bad Request');
+                echo json_encode(['error' => 'タイトルと本文は必須です。']);
+                exit;
+            }
+
+            $title = $data['title'];
+            $body = $data['body'];
+
+            // データベースに新しいスレッド（親投稿）を挿入するSQL文
+            $sql = "INSERT INTO posts (user_id, title, body) VALUES (:user_id, :title, :body)";
+            
+            $stmt = $pdo->prepare($sql);
+
+            $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindValue(':title', $title, PDO::PARAM_STR);
+            $stmt->bindValue(':body', $body, PDO::PARAM_STR);
+            
+            $stmt->execute();
+
+            // 成功したことをクライアントに伝える
+            header('HTTP/1.1 201 Created');
+            echo json_encode(['message' => '新しいスレッドが作成されました。']);
+        }
 
     } catch (Exception $e) {
         // エラーが発生した場合

@@ -19,11 +19,34 @@ $method = $_SERVER['REQUEST_METHOD'];
 //====================================================
 if ($method === 'GET') {
     try {
-        // URLに "?parent_id=5" のようなパラメータが付いているか確認
-        // isset()でチェックすることで、処理を分岐させる
-        
-        // (A) パラメータがある場合：特定の親投稿に紐づく「返信一覧」を返す
-        if (isset($_GET['parent_id'])) {
+        // (A) URLに "?id=..." が指定されていれば「詳細1件」を返す (編集ページ用)
+        if (isset($_GET['id'])) {
+            // URLから編集対象の投稿IDを取得
+            $post_id = (int)$_GET['id'];
+            
+            // 投稿IDに一致する投稿をデータベースから取得するSQL
+            $sql = "
+                SELECT p.id, p.title, p.body, p.user_id 
+                FROM posts p 
+                WHERE p.id = :id
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // 権限チェック：投稿が存在しない、または自分のものでない場合はエラー
+            if (!$post || $post['user_id'] !== $_SESSION['user']['id']) {
+                header('HTTP/1.1 403 Forbidden');
+                echo json_encode(['error' => 'この投稿を編集する権限がありません。']);
+                exit;
+            }
+
+            // 権限チェックを通過したら、投稿データをJSONで返す
+            echo json_encode($post);
+
+        // (B) URLに "?parent_id=..." があれば「返信一覧」を返す
+        } elseif (isset($_GET['parent_id'])) {
             
             // URLから親投稿のIDを取得。念のため(int)で整数に変換し、安全性を高める
             $parent_id = (int)$_GET['parent_id'];
@@ -33,11 +56,7 @@ if ($method === 'GET') {
             // 返信は会話の流れが分かりやすいように、古い順（昇順 ASC）で並び替える
             $sql = "
                 SELECT 
-                    p.id, 
-                    p.user_id, 
-                    p.body, 
-                    p.created_at, 
-                    u.username
+                    p.id, p.user_id, p.body, p.created_at, u.username
                 FROM posts AS p
                 JOIN users AS u ON p.user_id = u.id
                 WHERE p.parentpost_id = :parent_id
@@ -52,7 +71,7 @@ if ($method === 'GET') {
 
             echo json_encode($replies); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
         
-        // (B) パラメータがない場合：これまで通りの「親スレッド一覧」を返す
+        // (C) パラメータがない場合：「親スレッド一覧」を返す
         } else {
             // データベースに送る命令文（SQL）を準備
             // parentpost_idがNULLの投稿（=親投稿）だけに絞り込む
@@ -79,7 +98,7 @@ if ($method === 'GET') {
                 GROUP BY 
                     p.id
                 ORDER BY 
-                    p.created_at ASC
+                    p.created_at DESC
             ";
             
             // SQLを実行する（ユーザーからの入力値がないため、prepare/bindは必須ではないが、統一性のために使用）

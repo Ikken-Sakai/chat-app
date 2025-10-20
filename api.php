@@ -77,7 +77,7 @@ if ($method === 'GET') {
                 WHERE 
                     p.parentpost_id IS NULL
                 GROUP BY 
-                    p.id, u.username
+                    p.id
                 ORDER BY 
                     p.created_at ASC
             ";

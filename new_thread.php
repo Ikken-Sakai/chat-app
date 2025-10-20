@@ -1,7 +1,7 @@
 <?php
 // ログインしていないユーザーをログインページにリダイレクト
 require_once __DIR__ . '/auth.php';
-#require_login();
+require_login();
 
 // CSRF対策用のトークンを生成
 if (empty($_SESSION['form_token'])) {

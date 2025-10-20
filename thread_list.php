@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
-// require_login(); // ログインしていない場合はlogin.phpにリダイレクト
+require_login(); // ログインしていない場合はlogin.phpにリダイレクト
 ?>
 
 
@@ -35,6 +35,8 @@ require_once __DIR__ . '/auth.php';
         // HTML要素を取得
         const $loadingMessage = document.getElementById('loading-message');
         const $threadList = document.getElementById('thread-list'); //HTMLの箱(掲示板全体)
+
+        const LOGGED_IN_USERNAME = "<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>";
 
         /**
          * APIからスレッド一覧を取得して画面に表示する非同期関数

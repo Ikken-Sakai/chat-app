@@ -117,8 +117,8 @@ if ($method === 'POST') {
                 exit;
             }
 
-            $post_id = (int)$data['id']; //編集対象の投稿のIDを保存するための変数
-            $new_body = $data['body']; //新しい投稿本文を保存するための変数
+            $post_id = (int)$data['id']; //編集対象の投稿のIDを保存するための変数(宛先)
+            $new_body = $data['body']; //新しい投稿本文を保存するための変数(荷物の中身
 
             //権限チェック - 編集しようとしている投稿の元の投稿者IDを取得
             $stmt = $pdo->prepare("SELECT user_id FROM posts WHERE id = ?");

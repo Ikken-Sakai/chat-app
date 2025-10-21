@@ -25,6 +25,7 @@ Gitによるソース管理を行い、BacklogおよびGitHubと連携してい�
 - 投稿への返信（階層構造）  
 - 投稿の編集・削除（本人のみ可能）  
 - プロフィール一覧閲覧機能
+- プロフィール編集機能（本人のみ可能）
 - ページング・ソート機能  
 - セッション管理によるアクセス制御  
 - UIデザイン（CSSによる最終調整予定）
@@ -35,14 +36,15 @@ Gitによるソース管理を行い、BacklogおよびGitHubと連携してい�
 | ファイル名 | 役割 |
 |-------------|------|
 | `login.php` | ログインページ |
+| `logout.php` | ログアウト処理 |
 | `register.php` | 新規登録ページ |
 | `thread_list.php` | スレッド一覧表示 |
 | `new_thread.php` | 新規スレッド投稿フォーム |
-| `thread.php` | スレッド詳細・返信表示 |
 | `edit_post.php` | 投稿編集ページ |
-| `profile_list.php` | **ユーザーのプロフィール一覧を閲覧** |
+| `profile_list.php` | ユーザーのプロフィール一覧を閲覧 |
+| `edit_profile.php` | ユーザーのプロフィールを編集 |
 | `api.php` | 各種APIエンドポイント |
-| `db/connection.php` | データベース接続設定 |
+| `db/db.php` | データベース接続設定 |
 
 ---
 
@@ -50,14 +52,16 @@ Gitによるソース管理を行い、BacklogおよびGitHubと連携してい�
 chat-app/
 ├── api.php
 ├── db/
-│ └── connection.php
+│ └── db.php
 ├── edit_post.php
-├── list.php
+├── thread_list.php
+├── auth.php
 ├── login.php
+├── logout.php
 ├── new_thread.php
 ├── register.php
-├── thread.php
-├── profile_list.php ← 今後実装予定
+├── profile_list.php 
+├── edit_profile.php 
 └── README.md
 
 ## 作者情報

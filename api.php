@@ -118,7 +118,7 @@ if ($method === 'GET') {
 }
 
 //====================================================
-// POSTリクエストの処理 (新規スレッド作成, 返信、　編集 )
+// POSTリクエストの処理 (新規スレッド作成, 返信、　編集 、削除)
 //====================================================
 if ($method === 'POST') {
     $json_data = file_get_contents('php://input'); // クライアントから送信されたJSONデータを受け取る
@@ -127,8 +127,42 @@ if ($method === 'POST') {
     try {
         $user_id = $_SESSION['user']['id']; // ログイン中のユーザーIDは共通で取得
 
-        // (A) idが含まれている場合、投稿編集として処理
-        if (isset($data['id']) && !empty($data['id'])) {
+        // (A) "action": "delete" が含まれている場合、投稿削除として処理
+        if (isset($data['action']) && $data['action'] === 'delete') {
+            // バリデーション: 削除対象のidがあるか確認
+            if (empty($data['id'])) {
+                header('HTTP/1.1 400 Bad Request');
+                echo json_encode(['error' => '削除する投稿のIDが指定されていません。']);
+                exit;
+            }
+            $post_id = (int)$data['id']; // 削除対象の投稿ID
+
+            // 権限チェック
+            // 削除しようとしている投稿の元の投稿者IDを取得
+            $stmt = $pdo->prepare("SELECT user_id FROM posts WHERE id = ?");
+            $stmt->execute([$post_id]);
+            $post = $stmt->fetch();
+
+            // 投稿が存在しない、または自分の投稿でない場合はエラー
+            if (!$post || $post['user_id'] !== $user_id) {
+                header('HTTP/1.1 403 Forbidden');
+                echo json_encode(['error' => 'この投稿を削除する権限がありません。']);
+                exit;
+            }
+
+            // データベース削除処理
+            // 権限チェック後、投稿をデータベースから削除するSQL文
+            $sql = "DELETE FROM posts WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            // 成功したことをクライアントに伝える
+            echo json_encode(['message' => '投稿が削除されました。']);
+
+
+        // (B) idが含まれている場合、投稿編集として処理
+        }elseif (isset($data['id']) && !empty($data['id'])) {
             // バリデーション
             if (empty($data['body'])) {
                 header('HTTP/1.1 400 Bad Request');
@@ -160,7 +194,7 @@ if ($method === 'POST') {
             
             echo json_encode(['message' => '投稿が更新されました。']);
 
-        // (B) parentpost_idが含まれている場合、返信投稿として処理
+        // (C) parentpost_idが含まれている場合、返信投稿として処理
         } elseif (isset($data['parentpost_id']) && !empty($data['parentpost_id'])) {
 
             //バリデーション：返信内容（bodyが空でないかチェック）
@@ -182,7 +216,7 @@ if ($method === 'POST') {
             header('HTTP/1.1 201 Created');
             echo json_encode(['message' => '返信が投稿されました。']);
 
-        // (C) 上記以外は、新規スレッド作成として処理
+        // (D) 上記以外は、新規スレッド作成として処理
         } else {
             //バリデーション：titleとbodyが空でないかチェック
             if (empty($data['title']) || empty($data['body'])) {

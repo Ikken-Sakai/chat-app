@@ -20,6 +20,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             <p><?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>さんとしてログイン中</p>
             <a href="new_thread.php" class="btn btn-primary">新規スレッド作成</a>
             <a href="logout.php" class="btn btn-secondary">ログアウト</a>
+            <button id="refreshBtn" class="btn btn-secondary">↻</button>
         </div>
         
         <p id="loading-message" aria-live="polite"></p>
@@ -35,6 +36,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         // HTML要素を取得
         const $loadingMessage = document.getElementById('loading-message');
         const $threadList = document.getElementById('thread-list'); //HTMLの箱(掲示板全体)
+        const $refreshBtn = document.getElementById('refreshBtn'); // 更新ボタン要素を取得
         //PHPからログイン中のユーザ名をJavascript変数に埋め込み
         const LOGGED_IN_USERNAME = "<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>";
         //ログイン中のユーザIDも保持
@@ -46,6 +48,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         async function fetchAndDisplayThreads() {
             $loadingMessage.textContent = 'スレッドを読み込み中...';
             try {
+                //apiにGETリクエスト送信
                 const response = await fetch(API_ENDPOINT);
                 if (!response.ok) {
                     throw new Error(`HTTPエラー: ${response.status}`);
@@ -56,6 +59,17 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 loggedInUserId = data.current_user_id; 
                 // displayThreadsには、オブジェクトの中からthreads配列だけを渡す
                 displayThreads(data.threads);
+
+                //成功したら、更新しましたメッセージ表示
+                $loadingMessage.textContent = '一覧を更新しました。';
+                // 2秒後にメッセージを自動的に消す
+                setTimeout(() => {
+                    // メッセージがまだ「更新しました」の場合のみ消す
+                    // (連続クリックなどで「読み込み中」に変わっていたら消さない)
+                    if ($loadingMessage.textContent === '一覧を更新しました。') {
+                        $loadingMessage.textContent = '';
+                    }
+                }, 2000); // 2000ミリ秒 = 2秒
 
             } catch (error) {
                 $loadingMessage.textContent = '';
@@ -78,6 +92,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 return;
             }
 
+            //threadsを1つづつ取り出し
             threads.forEach(thread => {
                 const threadElement = document.createElement('div');
                 threadElement.className = 'thread-item';
@@ -405,8 +420,14 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
          * XSS対策のためのHTMLエスケープ関数
          */
         function escapeHTML(str) {
-            // ... (この関数は変更なし) ...
             return str ? String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]) : '';
+        }
+        
+        if ($refreshBtn) { // ボタン要素が確実に見つかった場合のみ設定
+             $refreshBtn.addEventListener('click', () => {
+                 console.log('更新ボタンがクリックされました。'); // デバッグ用ログ
+                 fetchAndDisplayThreads(); // スレッド一覧を再読み込み
+             });
         }
 
         // ページが読み込まれたときに最初のデータ取得を実行

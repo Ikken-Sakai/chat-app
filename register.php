@@ -9,6 +9,7 @@ if (isset($_SESSION['user'])) {
 }
 
 $error = '';
+$success_message='';
 
 // POSTリクエストがあった場合の処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,9 +37,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)');
             $stmt->execute([$username, $hashed_password]);
 
-            // 登録完了後、成功メッセージ付きでログインページにリダイレクト
-            header('Location: login.php?registered=1');
-            exit;
+            // 登録したユーザーのIDを取得
+            $new_user_id = $pdo->lastInsertId(); 
+
+            // セッションにユーザー情報を保存してログイン状態にする
+            $_SESSION['user'] = [
+                'id'       => (int)$new_user_id,
+                'username' => (string)$username,
+            ];
+            $_SESSION['user_id'] = (int)$new_user_id;
+            $_SESSION['last_active'] = time(); 
+
+            // 成功メッセージをセット (リダイレクトはしない)
+            $success_message = 'ユーザー登録が完了しました。スレッド一覧ページへ移動します...';
         }
     }
 }

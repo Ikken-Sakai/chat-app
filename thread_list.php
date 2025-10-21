@@ -161,16 +161,18 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
         /**
          * 特定のスレッドIDに対する返信を取得し、表示/非表示を切り替える非同期関数
-         * @param {string} parentPostId - 返信を取得する親スレッドのID
+         * @param {string} parentpostid - 返信を取得する親スレッドのid
+         * @param {boolean} forceOpen - trueの場合、閉じる動作を無効化して常に開く
          */
-        async function fetchAndDisplayReplies(parentPostId) {
+        async function fetchAndDisplayReplies(parentPostId, forceOpen = false) {
             const repliesContainer = document.getElementById(`replies-for-${parentPostId}`);
             const button = document.querySelector(`[data-thread-id='${parentPostId}']`);
 
-            if (repliesContainer.style.display === 'block') {
+            // forceOpen=false のときだけトグル処理を行う
+            if (!forceOpen && repliesContainer.style.display === 'block') {
                 repliesContainer.style.display = 'none';
-                const replyCount = button.dataset.replyCount; // data属性から件数を取得
-                button.textContent = `返信${replyCount}件`;   // 取得した件数でテキストを生成
+                const replyCount = button.dataset.replyCount;
+                button.textContent = `返信${replyCount}件`;
                 return;
             }
 
@@ -245,68 +247,58 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
          * @param {Event} event - submitイベントオブジェクト
          */
         async function submitReply(event) {
-            event.preventDefault(); // デフォルトのフォーム送信（ページリロード）を中止
-            
-            const form = event.target; //送信されたformを取得
-            const textarea = form.querySelector('textarea'); //form中のtextarea要素を見つけて取得
-            const submitButton = form.querySelector('button'); //form中のbutton要素を取得
-            const parentId = form.dataset.parentId; //formのdata-parent-idから返信先の親投稿IDを取得
+            event.preventDefault(); // ページのリロードを防止
 
-            submitButton.disabled = true; //二度押し防止
+            const form = event.target;
+            const textarea = form.querySelector('textarea');
+            const submitButton = form.querySelector('button');
+            const parentId = form.dataset.parentId;
+
+            submitButton.disabled = true;
             submitButton.textContent = '送信中...';
 
             try {
-                const response = await fetch(API_ENDPOINT, { /* ... */ }); // (API呼び出しは変更なし)
-                if (!response.ok) { /* ... */ } // (エラーチェックは変更なし)
+                //APIにPOST送信（bodyとparentpost_idを送る）
+                // api.php の POST 内「(C)返信投稿処理」が実行される
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        body: textarea.value,
+                        parentpost_id: parentId
+                    })
+                });
 
-                // --- 画面への即時反映処理 ---
+                if (!response.ok) {
+                    const result = await response.json();
+                    throw new Error(result.error || `HTTPエラー: ${response.status}`);
+                }
+
+                // (2) 返信送信が完了したら、返信欄を自動で開く
                 const repliesContainer = document.getElementById(`replies-for-${parentId}`);
-                if (repliesContainer.querySelector('p')?.textContent.includes('まだ返信がありません')) {
-                    repliesContainer.innerHTML = '';
-                }
-                
-                //画面に新しい返信データを作成
-                // --- newReply を newReplyData に変更し、id と user_id を追加 ---
-                const newReplyData = {
-                    id: Date.now(), // 仮のID (編集リンク用、サーバーからの本当のIDではない)
-                    user_id: loggedInUserId, // 所有者判定用 (取得済みのはず)
-                    body: textarea.value,
-                    username: LOGGED_IN_USERNAME, //投稿者名はログイン中のユーザ名
-                    created_at: 'たった今' // 仮の時刻
-                };
-                //上記のデータを使って、HTML生成・返信コンテナの末尾に追加 (createReplyElementがボタンも生成)
-                repliesContainer.appendChild(createReplyElement(newReplyData));
+                repliesContainer.style.display = 'block'; // 非表示なら開く
 
-                //返信件数カウンターの表示更新
+                // (3) 返信一覧を最新状態に更新（DBから再取得）
+                await fetchAndDisplayReplies(parentId, true);
+
+                // (4) 件数ボタンのカウントを更新
                 const replyCountButton = document.querySelector(`button[data-thread-id='${parentId}']`);
-                // --- カウンター更新前に現在の値を取得するように修正 ---
-                const currentCount = parseInt(replyCountButton.dataset.replyCount) || 0; // || 0 を追加して安全に
+                const currentCount = parseInt(replyCountButton.dataset.replyCount) || 0;
                 const newCount = currentCount + 1;
-                replyCountButton.dataset.replyCount = newCount; //新しい件数で上書き
-                if (repliesContainer.style.display === 'block') {
-                    replyCountButton.textContent = '返信を隠す';
-                } else {
-                    replyCountButton.textContent = `返信${newCount}件`;
-                }
+                replyCountButton.dataset.replyCount = newCount;
+                replyCountButton.textContent = '返信を隠す'; // 常に開いた状態で表示
 
-                // --- setupDeleteButtons の呼び出し位置をここに変更 ---
-                // カウンター更新の後、新しく追加した返信の削除ボタンにもイベントを設定
-                setupDeleteButtons(); 
-
-                textarea.value = ''; // テキストエリアをクリア
+                // (5) 入力欄をリセット
+                textarea.value = '';
 
             } catch (error) {
                 alert('エラー: ' + error.message);
             } finally {
-                // finallyブロックは、tryでの処理が成功しようと、catchでエラーになろうと、必ず最後に実行
-                // これにより、通信後にボタンの状態を確実に元に戻すことができる
-                
-                // ボタンの無効化を解除し、再度クリックできるように
+                // (6) ボタンの状態を戻す
                 submitButton.disabled = false;
-                // ボタンのテキストを「送信中...」から元の「返信する」に戻す
                 submitButton.textContent = '返信する';
             }
-        }
+    }
 
         /**
          * ページ上の全ての削除ボタンにクリックイベントを設定する関数

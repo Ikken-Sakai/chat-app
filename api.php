@@ -26,9 +26,15 @@ if ($method === 'GET') {
             
             // 投稿IDに一致する投稿をデータベースから取得するSQL
             $sql = "
-                SELECT p.id, p.title, p.body, p.user_id 
-                FROM posts p 
-                WHERE p.id = :id
+                SELECT 
+                    p.id, 
+                    p.title, 
+                    p.body, 
+                    p.user_id 
+                FROM 
+                    posts p 
+                WHERE 
+                    p.id = :id
             ";
             $stmt = $pdo->prepare($sql);
             $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
@@ -56,11 +62,19 @@ if ($method === 'GET') {
             // 返信は会話の流れが分かりやすいように、古い順（昇順 ASC）で並び替える
             $sql = "
                 SELECT 
-                    p.id, p.user_id, p.body, p.created_at, u.username
-                FROM posts AS p
-                JOIN users AS u ON p.user_id = u.id
-                WHERE p.parentpost_id = :parent_id
-                ORDER BY p.created_at ASC
+                    p.id, 
+                    p.user_id, 
+                    p.body, 
+                    p.created_at, 
+                    u.username
+                FROM 
+                    posts AS p
+                JOIN 
+                    users AS u ON p.user_id = u.id
+                WHERE 
+                    p.parentpost_id = :parent_id
+                ORDER BY 
+                    p.created_at ASC
             ";
             
             // SQLインジェクション対策として、まずSQL文の"型枠"だけをデータベースに送って準備

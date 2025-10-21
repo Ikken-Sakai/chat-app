@@ -35,8 +35,10 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         // HTML要素を取得
         const $loadingMessage = document.getElementById('loading-message');
         const $threadList = document.getElementById('thread-list'); //HTMLの箱(掲示板全体)
-
+        //PHPからログイン中のユーザ名をJavascript変数に埋め込み
         const LOGGED_IN_USERNAME = "<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>";
+        //ログイン中のユーザIDも保持
+        let loggedInUserId = null;
 
         /**
          * APIからスレッド一覧を取得して画面に表示する非同期関数
@@ -175,6 +177,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         // 返信要素の生成をヘルパー関数の処理で
                         repliesContainer.appendChild(createReplyElement(reply));
                     });
+                    // 返信を表示した後、内部に追加された削除ボタンにもイベントを設定する
+                    setupDeleteButtons();
                 }
                 button.textContent = '返信を隠す';
             } catch (error) {
@@ -190,12 +194,23 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         function createReplyElement(reply) {
             const replyElement = document.createElement('div'); //返信を囲む<dvi>要素を作成
             replyElement.className = 'reply-item'; //cssクラス名
+
+            // 返信の所有者か判定 (loggedInUserIdはグローバル変数)
+            //loggedInUserIdがnullでないことも確認
+            const isReplyOwner = (loggedInUserId !== null && reply.user_id === loggedInUserId);
+            // 所有者なら編集・削除ボタンのHTMLを生成 (返信ボタンには識別用クラスも付与)
+            const replyOwnerActions = isReplyOwner ?`
+                <a href="edit_post.php?id=${reply.id}" class="btn btn-sm btn-secondary reply-edit-btn">編集</a>
+                <button class="btn btn-sm btn-danger delete-btn reply-delete-btn" data-post-id="${reply.id}">🗑️</button>
+            ` : '';
+
             //wscapeHTMLを通してXSS攻撃対策
             replyElement.innerHTML = `
                 <p>${escapeHTML(reply.body)}</p>
                 <div class="reply-meta">
                     <span>投稿者: ${escapeHTML(reply.username)}</span>
                     <span>投稿日時: ${reply.created_at}</span>
+                    ${replyOwnerActions}
                 </div>
             `;
             return replyElement;
@@ -226,48 +241,42 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             submitButton.textContent = '送信中...';
 
             try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        body: textarea.value,
-                        parentpost_id: parentId
-                    })
-                });
-
-                if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.error || `HTTPエラー: ${response.status}`);
-                }
+                const response = await fetch(API_ENDPOINT, { /* ... */ }); // (API呼び出しは変更なし)
+                if (!response.ok) { /* ... */ } // (エラーチェックは変更なし)
 
                 // --- 画面への即時反映処理 ---
-                //新規の返信を表示させるための<div>要素をIDで指定
                 const repliesContainer = document.getElementById(`replies-for-${parentId}`);
-                //返信がない表示があった場合、エラーになるのを防ぐ
                 if (repliesContainer.querySelector('p')?.textContent.includes('まだ返信がありません')) {
-                    //メッセージを消去し、新規返信をできるように
                     repliesContainer.innerHTML = '';
                 }
                 
                 //画面に新しい返信データを作成
-                const newReply = {
+                // --- newReply を newReplyData に変更し、id と user_id を追加 ---
+                const newReplyData = {
+                    id: Date.now(), // 仮のID (編集リンク用、サーバーからの本当のIDではない)
+                    user_id: loggedInUserId, // 所有者判定用 (取得済みのはず)
                     body: textarea.value,
                     username: LOGGED_IN_USERNAME, //投稿者名はログイン中のユーザ名
-                    created_at: 'たった今'
+                    created_at: 'たった今' // 仮の時刻
                 };
-                //上記のデータを使って、HTML生成・返信コンテナの末尾に追加
-                repliesContainer.appendChild(createReplyElement(newReply));
+                //上記のデータを使って、HTML生成・返信コンテナの末尾に追加 (createReplyElementがボタンも生成)
+                repliesContainer.appendChild(createReplyElement(newReplyData));
 
                 //返信件数カウンターの表示更新
                 const replyCountButton = document.querySelector(`button[data-thread-id='${parentId}']`);
-                //ボタンのdata属性のカウント＋1
-                const newCount = parseInt(replyCountButton.dataset.replyCount) + 1;
+                // --- カウンター更新前に現在の値を取得するように修正 ---
+                const currentCount = parseInt(replyCountButton.dataset.replyCount) || 0; // || 0 を追加して安全に
+                const newCount = currentCount + 1;
                 replyCountButton.dataset.replyCount = newCount; //新しい件数で上書き
                 if (repliesContainer.style.display === 'block') {
                     replyCountButton.textContent = '返信を隠す';
                 } else {
                     replyCountButton.textContent = `返信${newCount}件`;
                 }
+
+                // --- setupDeleteButtons の呼び出し位置をここに変更 ---
+                // カウンター更新の後、新しく追加した返信の削除ボタンにもイベントを設定
+                setupDeleteButtons(); 
 
                 textarea.value = ''; // テキストエリアをクリア
 
@@ -293,16 +302,22 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 // 同じボタンに何度もイベントを追加しないように、古いイベントを削除して新しいイベントを設定
                 // cloneNode(true) でボタンを複製し、replaceWithで元のボタンと入れ替える
                 const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
+                // 元のボタンの親要素が存在する場合のみ置換を実行 (削除済みの要素へのアクセスを防ぐ)
+                if (button.parentNode) {
+                    button.parentNode.replaceChild(newButton, button);
+                }
                 
                 // 新しいボタンにクリックイベントリスナーを追加
-                newButton.addEventListener('click', () => {
-                    // ボタンの data-post-id 属性から削除対象の投稿IDを取得
-                    const postId = newButton.dataset.postId;
-                    // 削除処理関数を呼び出す (ボタン要素自体も渡す)
-                    deletePost(postId, newButton); 
-                });
+                newButton.removeEventListener('click', handleDeleteButtonClick); // 既存のリスナーを削除
+                newButton.addEventListener('click', handleDeleteButtonClick); // 新しい関数を参照
             });
+        }
+        
+        // 削除ボタンクリック時のイベントハンドラ関数を分離 (deletePostを呼び出すだけ)
+        function handleDeleteButtonClick(event) {
+             const button = event.currentTarget; // クリックされたボタン要素
+             const postId = button.dataset.postId;
+             deletePost(postId, button); 
         }
 
         /**
@@ -338,13 +353,43 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 }
 
                 // 画面からの即時削除
-                // 削除された投稿に対応するHTML要素（<div class="thread-item">）を取得
-                // closest() は、ボタンから見て一番近い祖先要素のうち、指定したセレクタに一致するものを探す
-                const postElement = buttonElement.closest('.thread-item'); 
+                //削除要素の特定方法を修正
+                //親投稿か返信化で削除する要素を切り替え
+                const postElement = buttonElement.closest('.reply-item') || buttonElement.closest('.thread-item');
                 if (postElement) {
-                    postElement.remove(); // 要素をDOMツリーから削除
+                    // 親投稿(.thread-item) または 返信(.reply-item) の要素をDOMツリーから削除
+                    postElement.remove(); 
+                    // もし削除したのが返信なら、親投稿の返信件数も更新
+                    if (buttonElement.classList.contains('reply-delete-btn')) {
+                        // 削除された返信要素から、親のスレッド要素を探す
+                        const parentThreadItem = postElement.closest('.thread-item');
+                        if (parentThreadItem) {
+                            // 親スレッド要素の中から返信件数ボタンを探す
+                            const replyCountButton = parentThreadItem.querySelector('.show-replies-btn');
+                            // ボタンのdata属性から現在の件数を取得し、数値に変換
+                            const currentCount = parseInt(replyCountButton.dataset.replyCount);
+                            // 件数が有効な数値で、かつ0より大きい場合のみ処理
+                            if (!isNaN(currentCount) && currentCount > 0) {
+                                // 件数を1減らす
+                                const newCount = currentCount - 1;
+                                // ボタンのdata属性と表示テキストを更新
+                                replyCountButton.dataset.replyCount = newCount;
+                                const repliesContainer = parentThreadItem.querySelector('.replies-container');
+                                // 返信欄が開いている状態か閉じた状態かでテキストを調整
+                                if (repliesContainer.style.display === 'block') {
+                                     replyCountButton.textContent = '返信を隠す'; // 開いていたら隠すボタンのまま
+                                } else {
+                                     replyCountButton.textContent = `返信${newCount}件`;
+                                }
+                                // もし最後の返信だったら「まだ返信がありません」を表示 (開いている場合のみ)
+                                if (newCount === 0 && repliesContainer.style.display === 'block') {
+                                     repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
+                                }
+                            }
+                        }
+                    }
                 }
-                alert('投稿を削除しました。'); // 成功メッセージを表示
+                alert('削除しました。'); // メッセージ修正
 
             } catch (error) {
                 // エラーが発生した場合

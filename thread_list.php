@@ -48,9 +48,12 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 if (!response.ok) {
                     throw new Error(`HTTPエラー: ${response.status}`);
                 }
-                const threads = await response.json();
-                displayThreads(threads);
-                $loadingMessage.textContent = '';
+                // APIからのレスポンス(オブジェクト)を一旦 data 変数で受け取る
+                const data = await response.json(); 
+                // グローバル変数にログインユーザーIDを保存
+                loggedInUserId = data.current_user_id; 
+                // displayThreadsには、オブジェクトの中からthreads配列だけを渡す
+                displayThreads(data.threads);
 
             } catch (error) {
                 $loadingMessage.textContent = '';
@@ -76,7 +79,18 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             threads.forEach(thread => {
                 const threadElement = document.createElement('div');
                 threadElement.className = 'thread-item';
+
                 // 各スレッドのHTMLテンプレート。返信フォームを追加
+                // 自分の投稿かどうかを判定 (APIから取得したログインIDと比較)
+                const isOwner = (thread.user_id === loggedInUserId);
+                
+                // 編集・削除ボタンのHTMLを条件付きで生成
+                // isOwnerがtrueの場合のみボタンのHTMLを生成、falseなら空文字
+                const ownerActions = isOwner ? `
+                    <a href="edit_post.php?id=${thread.id}" class="btn btn-sm btn-secondary">編集</a>
+                    <button class="btn btn-sm btn-danger delete-btn" data-post-id="${thread.id}">🗑️</button>
+                ` : '';
+
                 threadElement.innerHTML = `
                     <div class="thread-header">
                         <span class="thread-title">${escapeHTML(thread.title)}</span>
@@ -87,6 +101,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     </div>
                     <div class="thread-footer">
                         <span>投稿日時: ${thread.created_at}</span>
+                        ${ownerActions}
                         <button class="show-replies-btn" data-thread-id="${thread.id}" data-reply-count="${thread.reply_count}">返信${thread.reply_count}件</button>
                     </div>
                     <div class="replies-container" id="replies-for-${thread.id}" style="display: none;"></div>
@@ -103,6 +118,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             setupReplyButtons();
             // 返信フォームの準備を行う関数を呼び出す
             setupReplyForms();
+            // 削除ボタンの準備を行う関数を呼び出す
+            setupDeleteButtons();
         }
 
         /**
@@ -257,9 +274,86 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             } catch (error) {
                 alert('エラー: ' + error.message);
             } finally {
+                // finallyブロックは、tryでの処理が成功しようと、catchでエラーになろうと、必ず最後に実行
+                // これにより、通信後にボタンの状態を確実に元に戻すことができる
+                
+                // ボタンの無効化を解除し、再度クリックできるように
                 submitButton.disabled = false;
+                // ボタンのテキストを「送信中...」から元の「返信する」に戻す
                 submitButton.textContent = '返信する';
             }
+        }
+
+        /**
+         * ページ上の全ての削除ボタンにクリックイベントを設定する関数
+         */
+        function setupDeleteButtons() {
+            // '.delete-btn' というクラスを持つ全てのボタン要素を取得
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                // 同じボタンに何度もイベントを追加しないように、古いイベントを削除して新しいイベントを設定
+                // cloneNode(true) でボタンを複製し、replaceWithで元のボタンと入れ替える
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+                
+                // 新しいボタンにクリックイベントリスナーを追加
+                newButton.addEventListener('click', () => {
+                    // ボタンの data-post-id 属性から削除対象の投稿IDを取得
+                    const postId = newButton.dataset.postId;
+                    // 削除処理関数を呼び出す (ボタン要素自体も渡す)
+                    deletePost(postId, newButton); 
+                });
+            });
+        }
+
+        /**
+         * 投稿を削除する処理を行う非同期関数
+         * @param {string} postId - 削除する投稿のID
+         * @param {HTMLElement} buttonElement - クリックされた削除ボタン要素
+         */
+        async function deletePost(postId, buttonElement) {
+            // ユーザーに最終確認のダイアログを表示
+            if (!confirm('本当にこの投稿を削除しますか？')) {
+                return; // 「キャンセル」が押されたら何もしないで処理を終了
+            }
+
+            // 処理中はボタンを無効化し、テキストを変更
+            buttonElement.disabled = true;
+            buttonElement.textContent = '削除中...';
+
+            try {
+                // APIに削除リクエストを送信
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete', // APIに削除アクションであることを伝える
+                        id: postId        // APIに削除対象のIDを伝える
+                    })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    // APIからエラーが返された場合
+                    throw new Error(result.error || `HTTPエラー: ${response.status}`);
+                }
+
+                // 画面からの即時削除
+                // 削除された投稿に対応するHTML要素（<div class="thread-item">）を取得
+                // closest() は、ボタンから見て一番近い祖先要素のうち、指定したセレクタに一致するものを探す
+                const postElement = buttonElement.closest('.thread-item'); 
+                if (postElement) {
+                    postElement.remove(); // 要素をDOMツリーから削除
+                }
+                alert('投稿を削除しました。'); // 成功メッセージを表示
+
+            } catch (error) {
+                // エラーが発生した場合
+                alert('エラー: ' + error.message);
+                // エラーが発生したらボタンの状態を元に戻す
+                buttonElement.disabled = false;
+                buttonElement.textContent = '削除';
+            } 
+            // finally ブロックは削除処理では不要 (成功したら要素ごと消えるため)
         }
 
         /**

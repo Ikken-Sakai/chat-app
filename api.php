@@ -15,7 +15,7 @@ header('Content-Type: application/json; charset=utf-8');
 $method = $_SERVER['REQUEST_METHOD'];
 
 //====================================================
-// GETリクエストの処理 (一覧取得 または 返信一覧取得)
+// GETリクエストの処理 (一覧取得、　返信一覧取得、　詳細一件取得)
 //====================================================
 if ($method === 'GET') {
     try {
@@ -105,8 +105,11 @@ if ($method === 'GET') {
             $stmt = $pdo->prepare($sql);
             $stmt->execute();
             $threads = $stmt->fetchAll(PDO::FETCH_ASSOC); // 実行結果（親スレッドデータ一式）を取得し、PHPの配列に格納
-            
-            echo json_encode($threads); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
+            $response_data = [
+                'threads' => $threads,
+                'current_user_id' => $_SESSION['user']['id'] // ログイン中のユーザーIDを追加（自分の投稿のみ反映させるため）
+            ];
+            echo json_encode($response_data); // 配列全体をJSONで返す
         }
 
     } catch (Exception $e) {

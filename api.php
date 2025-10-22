@@ -87,6 +87,39 @@ if ($method === 'GET') {
         
         // (C) パラメータがない場合：「親スレッド一覧」を返す
         } else {
+            // ソート・ページング処理
+            
+            // 1ページあたりの表示件数
+            $limit = 10; 
+
+            // 並び替えの基準 (デフォルトは作成日時)
+            $sort_column = 'created_at'; // デフォルト値
+            $allowed_sort_columns = ['created_at', 'updated_at']; // ホワイトリスト
+            if (isset($_GET['sort']) && in_array($_GET['sort'], $allowed_sort_columns)) {
+                $sort_column = $_GET['sort'];
+            }
+
+            // 並び替えの方向 (デフォルトは降順 DESC)
+            $order = 'DESC'; // デフォルト値
+            if (isset($_GET['order']) && strtoupper($_GET['order']) === 'ASC') {
+                $order = 'ASC';
+            }
+
+            // 現在のページ番号 (デフォルトは1ページ目)
+            $page = 1;
+            if (isset($_GET['page']) && filter_var($_GET['page'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
+                $page = (int)$_GET['page'];
+            }
+
+            // SQLのOFFSETを計算 (1ページ目なら0, 2ページ目なら10)
+            $offset = ($page - 1) * $limit;
+
+            // --- 総ページ数を計算 ---
+            $count_sql = "SELECT COUNT(*) FROM posts WHERE parentpost_id IS NULL";
+            $count_stmt = $pdo->query($count_sql);
+            $total_threads = (int)$count_stmt->fetchColumn();
+            $totalPages = ceil($total_threads / $limit); // 総数を1ページあたりの件数で割り、小数点以下を切り上げ
+
             // データベースに送る命令文（SQL）を準備
             // parentpost_idがNULLの投稿（=親投稿）だけに絞り込む
             // 親投稿は、新しいものが一番上に表示されるように降順（DESC）で並び替える
@@ -112,7 +145,8 @@ if ($method === 'GET') {
                 GROUP BY 
                     p.id
                 ORDER BY 
-                    p.created_at DESC
+                    p.{$sort_column} {$order} -- 動的に設定
+                LIMIT :limit OFFSET :offset      -- 動的に設定
             ";
             
             // SQLを実行する（ユーザーからの入力値がないため、prepare/bindは必須ではないが、統一性のために使用）
@@ -248,6 +282,8 @@ if ($method === 'POST') {
             $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
             $stmt->bindValue(':title', $data['title'], PDO::PARAM_STR);
             $stmt->bindValue(':body', $data['body'], PDO::PARAM_STR);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
 
             //成功時にクライアントへ伝える

@@ -19,8 +19,83 @@ $method = $_SERVER['REQUEST_METHOD'];
 //====================================================
 if ($method === 'GET') {
     try {
-        // (A) URLに "?id=..." が指定されていれば「詳細1件」を返す (編集ページ用)
-        if (isset($_GET['id'])) {
+        // (A) URLに "?action=get_profiles" が指定されていれば「プロフィール一覧」を返す
+        if (isset($_GET['action']) && $_GET['action'] === 'get_profiles') {
+            
+            // 1ページあたりの表示件数
+            $limit = 10; 
+
+            // 並び替えの基準 (デフォルトはユーザー名)
+            $sort_column = 'u.username'; // デフォルト値 (usersテーブルのusername)
+            $allowed_sort_columns = ['u.username']; // ホワイトリスト (必要に応じて追加:例 p.department)
+            if (isset($_GET['sort']) && in_array($_GET['sort'], $allowed_sort_columns)) {
+                // フロントエンドからは 'username' のように送られてくる想定
+                // テーブルエイリアス 'u.' を付けてSQLで使用
+                if ($_GET['sort'] === 'username') {
+                     $sort_column = 'u.username';
+                } 
+                // 他のカラムでソートする場合、ここに追加
+            }
+
+            // 並び替えの方向 (デフォルトは昇順 ASC)
+            $order = 'ASC'; // デフォルト値
+            if (isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC') {
+                $order = 'DESC';
+            }
+
+            // 現在のページ番号 (デフォルトは1ページ目)
+            $page = 1;
+            if (isset($_GET['page']) && filter_var($_GET['page'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
+                $page = (int)$_GET['page'];
+            }
+
+            // SQLのOFFSETを計算
+            $offset = ($page - 1) * $limit;
+
+            // ユーザー数を計算
+            // profilesテーブルに存在するユーザー数をカウント (JOIN不要で高速化)
+            $count_sql = "SELECT COUNT(DISTINCT user_id) FROM profiles"; 
+            $count_stmt = $pdo->query($count_sql);
+            $total_profiles = (int)$count_stmt->fetchColumn();
+            $totalPages = ceil($total_profiles / $limit);
+
+            // プロフィール一覧を取得するSQL
+            // users(u)テーブルとprofiles(p)テーブルをLEFT JOINで結合
+            // (profilesにまだデータがないユーザーも表示するためLEFT JOIN)
+            $sql = "
+                SELECT 
+                    u.id AS user_id, 
+                    u.username, 
+                    p.department, 
+                    p.hobbies, 
+                    p.comment,
+                    p.updated_at 
+                FROM 
+                    users AS u
+                LEFT JOIN 
+                    profiles AS p ON u.id = p.user_id
+                ORDER BY 
+                    {$sort_column} {$order}
+                LIMIT :limit OFFSET :offset
+            ";
+            
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $profiles = $stmt->fetchAll(PDO::FETCH_ASSOC); 
+            
+            //応答データを作成
+            $response_data = [
+                'profiles' => $profiles,
+                'current_user_id' => $_SESSION['user']['id'], // 自分のプロフィール判定用
+                'totalPages' => $totalPages,
+                'currentPage' => $page
+            ];
+            echo json_encode($response_data);
+
+        // (B) URLに "?id=..." が指定されていれば「詳細1件」を返す (編集ページ用)
+        }elseif (isset($_GET['id'])) {
             // URLから編集対象の投稿IDを取得
             $post_id = (int)$_GET['id'];
             
@@ -51,7 +126,7 @@ if ($method === 'GET') {
             // 権限チェックを通過したら、投稿データをJSONで返す
             echo json_encode($post);
 
-        // (B) URLに "?parent_id=..." があれば「返信一覧」を返す
+        // (C) URLに "?parent_id=..." があれば「返信一覧」を返す
         } elseif (isset($_GET['parent_id'])) {
             
             // URLから親投稿のIDを取得。念のため(int)で整数に変換し、安全性を高める
@@ -85,7 +160,7 @@ if ($method === 'GET') {
 
             echo json_encode($replies); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
         
-        // (C) パラメータがない場合：「親スレッド一覧」を返す
+        // (D) パラメータがない場合：「親スレッド一覧」を返す
         } else {
             // ソート・ページング処理
             

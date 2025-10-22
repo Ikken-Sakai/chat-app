@@ -36,3 +36,44 @@
     color: #777;
     text-align: right;
 }
+
+/* ページネーション全体 */
+.pagination {
+  display: flex;
+  justify-content: center; /* 中央寄せ */
+  align-items: center;
+  margin: 40px auto 20px auto; /* 上下の余白を広めに */
+  gap: 6px; /* ボタン間の隙間 */
+  position: relative;
+  bottom: 0;
+  text-align: center;
+}
+
+/* ページ番号・リンク・現在ページ */
+.pagination a,
+.pagination strong,
+.pagination span {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #333;
+  background: #f9f9f9;
+  font-weight: bold;
+}
+
+/* 現在ページ */
+.pagination strong {
+  background: #ddd;
+}
+
+/* クリック可能ボタン */
+.pagination .clickable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pagination .clickable:hover {
+  background: #eaeaea;
+}

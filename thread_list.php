@@ -15,6 +15,12 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 <body>
     <div class="container">
         <h1>スレッド一覧</h1>
+        <div class="sort-controls">
+            <button class="sort-btn" data-sort="created_at" data-order="desc">新しい順</button>
+            <button class="sort-btn" data-sort="created_at" data-order="asc">古い順</button>
+            <button class="sort-btn" data-sort="updated_at" data-order="desc">更新順</button>
+        </div>
+
 
         <div class="nav-links">
             <p><?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>さんとしてログイン中</p>
@@ -26,7 +32,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         <p id="loading-message" aria-live="polite"></p>
 
         <div id="thread-list"></div>
-
+        <div id="pagination" class="pagination"></div>
     </div>
 
 
@@ -41,6 +47,10 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         const LOGGED_IN_USERNAME = "<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>";
         //ログイン中のユーザIDも保持
         let loggedInUserId = null;
+        // 現在のソート順とページ番号を保持する変数
+        let currentSort = 'created_at'; // デフォルト: 作成日時
+        let currentOrder = 'desc';      // デフォルト: 降順
+        let currentPage = 1;            // デフォルト: 1ページ目
 
         /**
          * APIからスレッド一覧を取得して画面に表示する非同期関数
@@ -48,8 +58,12 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         async function fetchAndDisplayThreads() {
             $loadingMessage.textContent = 'スレッドを読み込み中...';
             try {
+                //APIエンドポイントにソートとページパラメータを追加
+                const url = `${API_ENDPOINT}?sort=${currentSort}&order=${currentOrder}&page=${currentPage}`;
+                console.log('Fetching:', url); // デバッグ用ログ
                 //apiにGETリクエスト送信
-                const response = await fetch(API_ENDPOINT);
+                const response = await fetch(url);
+
                 if (!response.ok) {
                     throw new Error(`HTTPエラー: ${response.status}`);
                 }
@@ -59,6 +73,21 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 loggedInUserId = data.current_user_id; 
                 // displayThreadsには、オブジェクトの中からthreads配列だけを渡す
                 displayThreads(data.threads);
+
+                //ページ情報の取得とUI更新を追加
+                const totalPages = data.totalPages || 1; // APIから総ページ数を取得 (なければ1)
+                const receivedPage = data.currentPage || 1; // APIから現在のページ番号を取得 (なければ1)
+                currentPage = receivedPage; // currentPageをAPIからの値で更新
+
+                if (Array.isArray(data.threads)) {
+                     displayThreads(data.threads);
+                     // ページネーションUIを更新
+                     updatePaginationUI(totalPages, currentPage); 
+                } else {
+                     console.error('API応答の data.threads が配列ではありません:', data.threads);
+                     displayThreads([]); 
+                     updatePaginationUI(0, 1); // エラー時はページネーションもクリア
+                }
 
                 //成功したら、更新しましたメッセージ表示
                 $loadingMessage.textContent = '一覧を更新しました。';
@@ -137,6 +166,92 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             setupReplyForms();
             // 削除ボタンの準備を行う関数を呼び出す
             setupDeleteButtons();
+        }
+
+        /**
+         * ページ上のソートボタンにクリックイベントを設定する関数
+         */
+        function setupSortButtons() {
+            document.querySelectorAll('.sort-btn').forEach(button => {
+                // 既存のリスナーを削除（念のため）
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                newButton.addEventListener('click', () => {
+                    const sortBy = newButton.dataset.sort;
+                    const orderBy = newButton.dataset.order;
+
+                    // 現在のソート条件と同じボタンが押されたら何もしない
+                    if (sortBy === currentSort && orderBy === currentOrder) return; 
+
+                    console.log(`ソート変更: ${sortBy} ${orderBy}`);
+                    currentSort = sortBy;
+                    currentOrder = orderBy;
+                    currentPage = 1; // ソート順を変えたら1ページ目に戻す
+                    fetchAndDisplayThreads(); // 再読み込み
+                });
+            });
+        }
+
+        /**
+         * ページネーションのUIを生成・表示する関数
+         * @param {number} totalPages - 総ページ数
+         * @param {number} currentPage - 現在のページ番号
+         */
+        function updatePaginationUI(totalPages, currentPage) {
+            const $pagination = document.getElementById('pagination');
+
+            $pagination.innerHTML = ''; // まず中身を空にする
+
+            // 「前へ」リンク (1ページ目じゃなければ表示)
+            if (currentPage > 1) {
+                $pagination.appendChild(createPageLink('« 前へ', currentPage - 1));
+            }
+
+            // ページ番号リンク (簡易版：全ページ表示)
+            // (ページ数が多い場合は「...」で省略するロジックが必要になることも)
+            for (let i = 1; i <= totalPages; i++) {
+                $pagination.appendChild(createPageLink(i, i, i === currentPage));
+            }
+
+            // 「次へ」リンク (最終ページじゃなければ表示)
+            if (currentPage < totalPages) {
+                $pagination.appendChild(createPageLink('次へ »', currentPage + 1));
+            }
+        }
+
+        /**
+         * ページネーションのリンク要素（<a>または<strong>）を作成するヘルパー関数
+         * @param {string|number} label - リンクの表示テキスト
+         * @param {number} page - リンク先のページ番号
+         * @param {boolean} isCurrent - 現在のページかどうか (trueなら強調表示)
+         * @returns {HTMLElement} - 生成されたリンク要素
+         */
+        function createPageLink(label, page, isCurrent = false) {
+            // 現在のページ番号はリンクではなく強調表示 (<strong>)
+            if (isCurrent) {
+                const strong = document.createElement('strong');
+                strong.textContent = label;
+                strong.style.margin = '0 5px'; // 見た目の調整
+                strong.style.padding = '5px 8px';
+                return strong;
+            }
+            
+            // それ以外のページ番号はクリック可能なリンク (<a>)
+            const link = document.createElement('a');
+            link.href = '#'; // ページ遷移を防ぐため # を指定
+            link.textContent = label;
+            link.style.margin = '0 5px'; // 見た目の調整
+            link.style.padding = '5px 8px';
+            link.addEventListener('click', (event) => {
+                event.preventDefault(); // デフォルトのリンク動作を無効化
+                if (currentPage !== page) { // 現在のページと同じリンクは無視
+                    console.log(`ページ移動: ${page}ページ目へ`);
+                    currentPage = page; // 現在のページ番号を更新
+                    fetchAndDisplayThreads(); // スレッド一覧を再取得
+                }
+            });
+            return link;
         }
 
         /**
@@ -423,7 +538,10 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         }
 
         // ページが読み込まれたときに最初のデータ取得を実行
-        document.addEventListener('DOMContentLoaded', fetchAndDisplayThreads);
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndDisplayThreads();
+            setupSortButtons(); 
+        });
     </script>
 </body>
 </html>

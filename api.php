@@ -151,12 +151,17 @@ if ($method === 'GET') {
             
             // SQLを実行する（ユーザーからの入力値がないため、prepare/bindは必須ではないが、統一性のために使用）
             $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
             $stmt->execute();
             $threads = $stmt->fetchAll(PDO::FETCH_ASSOC); // 実行結果（親スレッドデータ一式）を取得し、PHPの配列に格納
             $response_data = [
                 'threads' => $threads,
-                'current_user_id' => $_SESSION['user']['id'] // ログイン中のユーザーIDを追加（自分の投稿のみ反映させるため）
+                'current_user_id' => $_SESSION['user']['id'],
+                'totalPages' => $totalPages,
+                'currentPage' => $page
             ];
+
             echo json_encode($response_data); // 配列全体をJSONで返す
         }
 
@@ -282,8 +287,6 @@ if ($method === 'POST') {
             $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
             $stmt->bindValue(':title', $data['title'], PDO::PARAM_STR);
             $stmt->bindValue(':body', $data['body'], PDO::PARAM_STR);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
 
             //成功時にクライアントへ伝える

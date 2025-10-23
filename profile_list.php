@@ -125,13 +125,9 @@ require_login();
                 
                 //成功したら「読み込み完了」メッセージを表示
                 $loadingMessage.textContent = `読み込み完了 (${data.profiles?.length || 0}件 / ${totalPages}ページ中 ${currentPage}ページ目)`;
-                // 2秒後にメッセージを消すタイマーをセット
-                setTimeout(() => { 
-                    if ($loadingMessage.textContent.startsWith('読み込み完了')) { // まだメッセージが表示されていたら
-                        $loadingMessage.textContent = ''; // 消す
-                    }
-                }, 2000);
-
+                if ($loadingMessage.textContent.startsWith('読み込み完了')) { // まだメッセージが表示されていたら
+                    $loadingMessage.textContent = ''; // 消す
+                }
             } catch (error) {
                 // もし途中で何か問題が起きたら、エラーを記録してユーザーに伝える
                 console.error("プロフィール読み込みエラー:", error); 

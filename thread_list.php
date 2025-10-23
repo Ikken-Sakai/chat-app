@@ -92,15 +92,11 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
                 //成功したら、更新しましたメッセージ表示
                 $loadingMessage.textContent = '一覧を更新しました。';
-                // 2秒後にメッセージを自動的に消す
-                setTimeout(() => {
-                    // メッセージがまだ「更新しました」の場合のみ消す
-                    // (連続クリックなどで「読み込み中」に変わっていたら消さない)
-                    if ($loadingMessage.textContent === '一覧を更新しました。') {
-                        $loadingMessage.textContent = '';
-                    }
-                }, 2000); // 2000ミリ秒 = 2秒
-
+                // メッセージがまだ「更新しました」の場合のみ消す
+                // (連続クリックなどで「読み込み中」に変わっていたら消さない)
+                if ($loadingMessage.textContent === '一覧を更新しました。') {
+                    $loadingMessage.textContent = '';
+                }
             } catch (error) {
                 $loadingMessage.textContent = '';
                 $threadList.innerHTML = `<p class="error">読み込みに失敗しました: ${error.message}</p>`;

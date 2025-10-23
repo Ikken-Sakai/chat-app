@@ -70,25 +70,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
     <?php endif; ?>
 
-    <form method="post" action="">
-      <div class="form-group">
-        <label for="username">ユーザー名</label>
-        <input type="text" id="username" name="username" required>
-      </div>
+    <?php if ($success_message !== ''): ?>
+      <div class="success"><?= htmlspecialchars($success_message, ENT_QUOTES, 'UTF-8') ?></div>
 
-      <div class="form-group">
-        <label for="password">パスワード</label>
-        <input type="password" id="password" name="password" required>
-      </div>
+      <script>
+          // ページ読み込み完了後にアラートを表示し、OKを押したらリダイレクト
+          window.onload = function() {
+              alert('ユーザー登録が完了しました。');
+              window.location.href = 'thread_list.php'; // スレッド一覧ページへ遷移
+          };
+      </script>
+      
+      <style>
+          form { display: none; } 
+          .container > a.btn-secondary { display: none; } /* 戻るボタンも非表示 */
+      </style>
 
-      <div class="form-group">
-        <label for="password_confirm">パスワード（確認用）</label>
-        <input type="password" id="password_confirm" name="password_confirm" required>
-      </div>
+    <?php else: ?>
+      <form method="post" action="">
+        <div class="form-group">
+          <label for="username">ユーザー名</label>
+          <input type="text" id="username" name="username" required>
+        </div>
 
-      <button type="submit" class="btn btn-success">登録</button>
-      <a href="login.php" class="btn btn-secondary" style="margin-top: 10px;">戻る</a>
-    </form>
+        <div class="form-group">
+          <label for="password">パスワード</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password_confirm">パスワード（確認用）</label>
+          <input type="password" id="password_confirm" name="password_confirm" required>
+        </div>
+
+        <button type="submit" class="btn btn-success">登録</button>
+        <a href="login.php" class="btn btn-secondary" style="margin-top: 10px;">戻る</a>
+      </form>
+    <?php endif; ?>
   </div>
 </body>
 </html>

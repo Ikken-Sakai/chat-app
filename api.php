@@ -85,8 +85,8 @@ if ($method === 'GET') {
             $offset = ($page - 1) * $limit;
 
             // ユーザー数を計算
-            // profilesテーブルに存在するユーザー数をカウント (JOIN不要で高速化)
-            $count_sql = "SELECT COUNT(DISTINCT user_id) FROM profiles"; 
+            // 登録されているユーザをカウント
+            $count_sql = "SELECT COUNT(*) FROM users"; 
             $count_stmt = $pdo->query($count_sql);
             $total_profiles = (int)$count_stmt->fetchColumn();
             $totalPages = ceil($total_profiles / $limit);
@@ -305,7 +305,8 @@ if ($method === 'POST') {
             // 趣味の配列をカンマ区切りの文字列に変換
             $hobbies_string = implode(',', $hobbies);
 
-            // --- UPSERT (Update or Insert) 処理 ---
+      {/* 成功メッセージ表示時はフォームを非表示にする */}
+            // UPSERT (Update or Insert) 処理 ---
             // まず、既にプロフィールが存在するか確認
             $check_sql = "SELECT id FROM profiles WHERE user_id = :user_id";
             $check_stmt = $pdo->prepare($check_sql);

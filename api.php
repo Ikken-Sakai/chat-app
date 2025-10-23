@@ -15,12 +15,44 @@ header('Content-Type: application/json; charset=utf-8');
 $method = $_SERVER['REQUEST_METHOD'];
 
 //====================================================
-// GETリクエストの処理 (一覧取得、　返信一覧取得、　詳細一件取得)
+// GETリクエストの処理 (一覧取得、　返信一覧取得、　詳細一件取得、　プロフィール一覧取得　、自分のプロフィール取得)
 //====================================================
 if ($method === 'GET') {
     try {
-        // (A) URLに "?action=get_profiles" が指定されていれば「プロフィール一覧」を返す
-        if (isset($_GET['action']) && $_GET['action'] === 'get_profiles') {
+        // URLに "?action=get_my_profile" が指定されていれば「自分のプロフィール」を返す
+        if (isset($_GET['action']) && $_GET['action'] === 'get_my_profile') {
+            $user_id = $_SESSION['user']['id']; // ログイン中のユーザーIDを取得
+
+            // usersテーブルとprofilesテーブルを結合して、該当ユーザーの情報を取得
+            $sql = "
+                SELECT 
+                    u.username, 
+                    p.department, 
+                    p.hobbies, 
+                    p.comment 
+                FROM 
+                    users AS u
+                LEFT JOIN 
+                    profiles AS p ON u.id = p.user_id
+                WHERE 
+                    u.id = :user_id
+            ";
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // もしユーザーが見つからなければエラー 
+            if (!$profile) {
+                 header('HTTP/1.1 404 Not Found');
+                 echo json_encode(['error' => 'ユーザーが見つかりません。']);
+                 exit;
+            }
+
+            echo json_encode($profile); // プロフィールデータをJSONで返す
+
+        // URLに "?action=get_profiles" が指定されていれば「プロフィール一覧」を返す
+        }elseif (isset($_GET['action']) && $_GET['action'] === 'get_profiles') {
             
             // 1ページあたりの表示件数
             $limit = 10; 
@@ -62,6 +94,7 @@ if ($method === 'GET') {
             // プロフィール一覧を取得するSQL
             // users(u)テーブルとprofiles(p)テーブルをLEFT JOINで結合
             // (profilesにまだデータがないユーザーも表示するためLEFT JOIN)
+            // ※LEFT JOINは2つのテーブルを結合する。NULLの情報も「未設定」として表示させられる
             $sql = "
                 SELECT 
                     u.id AS user_id, 
@@ -94,7 +127,7 @@ if ($method === 'GET') {
             ];
             echo json_encode($response_data);
 
-        // (B) URLに "?id=..." が指定されていれば「詳細1件」を返す (編集ページ用)
+        // URLに "?id=..." が指定されていれば「詳細1件」を返す (編集ページ用)
         }elseif (isset($_GET['id'])) {
             // URLから編集対象の投稿IDを取得
             $post_id = (int)$_GET['id'];
@@ -126,7 +159,7 @@ if ($method === 'GET') {
             // 権限チェックを通過したら、投稿データをJSONで返す
             echo json_encode($post);
 
-        // (C) URLに "?parent_id=..." があれば「返信一覧」を返す
+        // URLに "?parent_id=..." があれば「返信一覧」を返す
         } elseif (isset($_GET['parent_id'])) {
             
             // URLから親投稿のIDを取得。念のため(int)で整数に変換し、安全性を高める
@@ -160,7 +193,7 @@ if ($method === 'GET') {
 
             echo json_encode($replies); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
         
-        // (D) パラメータがない場合：「親スレッド一覧」を返す
+        // パラメータがない場合：「親スレッド一覧」を返す
         } else {
             // ソート・ページング処理
             
@@ -249,7 +282,7 @@ if ($method === 'GET') {
 }
 
 //====================================================
-// POSTリクエストの処理 (新規スレッド作成, 返信、　編集 、削除)
+// POSTリクエストの処理 (新規スレッド作成, 返信、　編集 、削除、　プロフィール更新)
 //====================================================
 if ($method === 'POST') {
     $json_data = file_get_contents('php://input'); // クライアントから送信されたJSONデータを受け取る
@@ -258,8 +291,48 @@ if ($method === 'POST') {
     try {
         $user_id = $_SESSION['user']['id']; // ログイン中のユーザーIDは共通で取得
 
-        // (A) "action": "delete" が含まれている場合、投稿削除として処理
-        if (isset($data['action']) && $data['action'] === 'delete') {
+        //"action": "update_profile" が含まれている場合、プロフィール更新として処理
+        if (isset($data['action']) && $data['action'] === 'update_profile') {
+            
+            // 入力データを取得 (存在しない場合は空文字や空配列に)
+            $department = $data['department'] ?? '';
+            $hobbies = $data['hobbies'] ?? []; // 趣味は配列で受け取る想定
+            $comment = $data['comment'] ?? '';
+
+            // バリデーション (例: 文字数制限など。ここでは省略)
+            // if (mb_strlen($comment) > 255) { /* エラー処理 */ }
+
+            // 趣味の配列をカンマ区切りの文字列に変換
+            $hobbies_string = implode(',', $hobbies);
+
+            // --- UPSERT (Update or Insert) 処理 ---
+            // まず、既にプロフィールが存在するか確認
+            $check_sql = "SELECT id FROM profiles WHERE user_id = :user_id";
+            $check_stmt = $pdo->prepare($check_sql);
+            $check_stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $check_stmt->execute();
+            $existing_profile = $check_stmt->fetch();
+
+            if ($existing_profile) {
+                // 存在する場合: UPDATE
+                $sql = "UPDATE profiles SET department = :department, hobbies = :hobbies, comment = :comment, updated_at = NOW() WHERE user_id = :user_id";
+            } else {
+                // 存在しない場合: INSERT
+                $sql = "INSERT INTO profiles (user_id, department, hobbies, comment) VALUES (:user_id, :department, :hobbies, :comment)";
+            }
+
+            // SQLを実行
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindValue(':department', $department, PDO::PARAM_STR);
+            $stmt->bindValue(':hobbies', $hobbies_string, PDO::PARAM_STR);
+            $stmt->bindValue(':comment', $comment, PDO::PARAM_STR);
+            $stmt->execute();
+            
+            echo json_encode(['message' => 'プロフィールが更新されました。']);
+
+        //"action": "delete" が含まれている場合、投稿削除として処理
+        }elseif (isset($data['action']) && $data['action'] === 'delete') {
             // バリデーション: 削除対象のidがあるか確認
             if (empty($data['id'])) {
                 header('HTTP/1.1 400 Bad Request');
@@ -292,7 +365,7 @@ if ($method === 'POST') {
             echo json_encode(['message' => '投稿が削除されました。']);
 
 
-        // (B) idが含まれている場合、投稿編集として処理
+        //idが含まれている場合、投稿編集として処理
         }elseif (isset($data['id']) && !empty($data['id'])) {
             // バリデーション
             if (empty($data['body'])) {
@@ -325,7 +398,7 @@ if ($method === 'POST') {
             
             echo json_encode(['message' => '投稿が更新されました。']);
 
-        // (C) parentpost_idが含まれている場合、返信投稿として処理
+        // parentpost_idが含まれている場合、返信投稿として処理
         } elseif (isset($data['parentpost_id']) && !empty($data['parentpost_id'])) {
 
             //バリデーション：返信内容（bodyが空でないかチェック）
@@ -347,7 +420,7 @@ if ($method === 'POST') {
             header('HTTP/1.1 201 Created');
             echo json_encode(['message' => '返信が投稿されました。']);
 
-        // (D) 上記以外は、新規スレッド作成として処理
+        // 上記以外は、新規スレッド作成として処理
         } else {
             //バリデーション：titleとbodyが空でないかチェック
             if (empty($data['title']) || empty($data['body'])) {

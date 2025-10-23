@@ -293,23 +293,46 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
             try {
                 const response = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTPエラー: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTPエラー: ${response.status}`);
                 const replies = await response.json();
                 repliesContainer.innerHTML = '';
 
                 if (replies.length === 0) {
                     repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
                 } else {
-                    replies.forEach(reply => {
-                        // 返信要素の生成をヘルパー関数の処理で
+                    // 最大3件まで表示（古い順で、下に新しい返信）
+                    const MAX_VISIBLE = 2;
+                    const visibleReplies = replies.length > MAX_VISIBLE
+                        ? replies.slice(-MAX_VISIBLE)
+                        : replies;
+
+                    // 返信の描画
+                    visibleReplies.forEach(reply => {
                         repliesContainer.appendChild(createReplyElement(reply));
                     });
-                    // 返信を表示した後、内部に追加された削除ボタンにもイベントを設定する
+
+                    // 3件より多い場合は「全件表示」ボタンを上に追加
+                    if (replies.length > MAX_VISIBLE) {
+                        const showAllBtn = document.createElement('button');
+                        showAllBtn.textContent = `全${replies.length}件の返信をすべて表示`;
+                        showAllBtn.className = 'show-all-btn';
+                        showAllBtn.addEventListener('click', () => {
+                            repliesContainer.innerHTML = '';
+                            replies.forEach(reply => {
+                                repliesContainer.appendChild(createReplyElement(reply));
+                            });
+                            showAllBtn.remove();
+                        });
+                        repliesContainer.prepend(showAllBtn);
+                    }
+
+                    // 削除ボタンを再設定
                     setupDeleteButtons();
                 }
+
+                // 返信表示中にボタンのテキストを変更
                 button.textContent = '返信を隠す';
+
             } catch (error) {
                 repliesContainer.innerHTML = `<p class="error">返信の読み込みに失敗しました: ${error.message}</p>`;
             }

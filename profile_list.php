@@ -160,7 +160,7 @@ require_login();
                 const isOwner = (loggedInUserId !== null && profile.user_id === loggedInUserId); //自分のプロフィールかを判定する (ログインIDと比較)
                 // 自分のであれば、「編集」ボタンのHTMLを作る (そうでなければ空文字)
                 const editLink = isOwner ? `
-                    <a href="profile_edit.php" class="btn btn-sm btn-secondary edit-link">編集</a>
+                    <a href="edit_profile.php" class="btn btn-sm btn-secondary edit-link">編集</a>
                 ` : ''; 
 
                 // プロフィール情報を表示するHTMLを組み立てる

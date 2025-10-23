@@ -54,47 +54,20 @@ if ($method === 'GET') {
         // URLに "?action=get_profiles" が指定されていれば「プロフィール一覧」を返す
         }elseif (isset($_GET['action']) && $_GET['action'] === 'get_profiles') {
             
-            // 1ページあたりの表示件数
+            // 1ページあたりの表示件数(10ページずつ)
             $limit = 10; 
 
-            // 並び替えの基準 (デフォルトはユーザー名)
-            $sort_column = 'u.username'; // デフォルト値 (usersテーブルのusername)
-            $allowed_sort_columns = ['u.username']; // ホワイトリスト (必要に応じて追加:例 p.department)
-            if (isset($_GET['sort']) && in_array($_GET['sort'], $allowed_sort_columns)) {
-                // フロントエンドからは 'username' のように送られてくる想定
-                // テーブルエイリアス 'u.' を付けてSQLで使用
-                if ($_GET['sort'] === 'username') {
-                     $sort_column = 'u.username';
-                } 
-                // 他のカラムでソートする場合、ここに追加
-            }
 
-            // 並び替えの方向 (デフォルトは昇順 ASC)
-            $order = 'ASC'; // デフォルト値
-            if (isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC') {
-                $order = 'DESC';
-            }
+            // 並び替え方向（昇順asc/降順desc）, デフォルトは昇順
+            $order = $_GET['order'] ?? 'asc';
 
-            // 現在のページ番号 (デフォルトは1ページ目)
-            $page = 1;
-            if (isset($_GET['page']) && filter_var($_GET['page'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])) {
-                $page = (int)$_GET['page'];
-            }
+            // 現在のページ番号取得。URLパラメータで?page=2など指定された場合に対応。指定がなければ1ページ目に設定
+            $page = isset($_GET['page']) && filter_var($_GET['page'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+                ? (int)$_GET['page']
+                : 1;
 
-            // SQLのOFFSETを計算
-            $offset = ($page - 1) * $limit;
-
-            // ユーザー数を計算
-            // 登録されているユーザをカウント
-            $count_sql = "SELECT COUNT(*) FROM users"; 
-            $count_stmt = $pdo->query($count_sql);
-            $total_profiles = (int)$count_stmt->fetchColumn();
-            $totalPages = ceil($total_profiles / $limit);
-
-            // プロフィール一覧を取得するSQL
-            // users(u)テーブルとprofiles(p)テーブルをLEFT JOINで結合
-            // (profilesにまだデータがないユーザーも表示するためLEFT JOIN)
-            // ※LEFT JOINは2つのテーブルを結合する。NULLの情報も「未設定」として表示させられる
+            //全件取得
+            //LEFT JOINでプロフィール未登録のユーザも一覧に出せる「未設定」で表示
             $sql = "
                 SELECT 
                     u.id AS user_id, 
@@ -107,24 +80,46 @@ if ($method === 'GET') {
                     users AS u
                 LEFT JOIN 
                     profiles AS p ON u.id = p.user_id
-                ORDER BY 
-                    {$sort_column} {$order}
-                LIMIT :limit OFFSET :offset
             ";
             
+            //SQL実行の準備
             $stmt = $pdo->prepare($sql);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
+            //取得した全データを連想配列形式(名前付きのキーに値をセットして使う配列)で取り出す
             $profiles = $stmt->fetchAll(PDO::FETCH_ASSOC); 
+
+            //自然順ソートで並べる
+            //usort()は配列を、自分で決めたルールで並び替える関数
+            //strnatcmp()は自然順比較を行う関数（数字を数値として比較）demo2がdemo10よりも先に並ぶ
+            usort($profiles, function($a, $b) use ($order) {
+                $cmp = strnatcmp($a['username'], $b['username']);
+                //降順なら結果を逆に
+                return ($order === 'desc') ? -$cmp : $cmp;
+            });
+
+            //ページング処理
+            //総ユーザ数（配列の件数を数える）
+            //SQLで再カウントするより、取得済みの配列を数える（よりシンプル）
+            $total_profiles = count($profiles);
+
+            //ページの総数を計算（全体35件で1ページ10件なら4ページ） ceil()は小数点切り上げ
+            $totalPages = ceil($total_profiles / $limit);
+
+            //表示すべき範囲を切り出す（1ページ＝10件）(2ページ目なら(2－1)*10＝10件目から表示)
+            $offset = ($page - 1) * $limit;
+
+            //array_slice()で全体の中から「今のページ分だけ」取り出す
+            $paged_profiles = array_slice($profiles, $offset, $limit);
+
             
             //応答データを作成
             $response_data = [
-                'profiles' => $profiles,
-                'current_user_id' => $_SESSION['user']['id'], // 自分のプロフィール判定用
-                'totalPages' => $totalPages,
-                'currentPage' => $page
+                'profiles' => $paged_profiles, //今のページで表示する分のプロフィール
+                'current_user_id' => $_SESSION['user']['id'], // 自分のプロフィール判定用(編集ボタンを出すかどうか)
+                'totalPages' => $totalPages, //全体ページ数
+                'currentPage' => $page //現在のページ番号
             ];
+            //JSON変換でブラウザへ送る
             echo json_encode($response_data);
 
         // URLに "?id=..." が指定されていれば「詳細1件」を返す (編集ページ用)

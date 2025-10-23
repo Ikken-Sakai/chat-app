@@ -15,19 +15,19 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 <body>
     <div class="container">
         <h1>スレッド一覧</h1>
-        <div class="sort-controls">
-            <button class="sort-btn" data-sort="created_at" data-order="desc">新しい順</button>
-            <button class="sort-btn" data-sort="created_at" data-order="asc">古い順</button>
-            <button class="sort-btn" data-sort="updated_at" data-order="desc">更新順</button>
-        </div>
 
 
         <div class="nav-links">
             <p><?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>さんとしてログイン中</p>
-            <a href="new_thread.php" class="btn btn-primary">新規スレッド作成</a>
-            <a href="profile_list.php" class="btn btn-secondary">プロフィール一覧へ</a>
             <a href="logout.php" class="btn btn-secondary">ログアウト</a>
+            <a href="new_thread.php" class="btn btn-primary">新規投稿</a>
+            <a href="profile_list.php" class="btn btn-secondary">プロフィール一覧へ</a>
             <button id="refreshBtn" class="btn btn-secondary">↻</button>
+        </div>
+        <div class="sort-controls">
+            <button class="sort-btn" data-sort="created_at" data-order="desc">新しい順</button>
+            <button class="sort-btn" data-sort="created_at" data-order="asc">古い順</button>
+            <button class="sort-btn" data-sort="updated_at" data-order="desc">更新順</button>
         </div>
         
         <p id="loading-message" aria-live="polite"></p>
@@ -136,8 +136,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
                 threadElement.innerHTML = `
                     <div class="thread-header">
-                        <span class="thread-title">${escapeHTML(thread.title)}</span>
                         <span class="thread-meta">投稿者: ${escapeHTML(thread.username)}</span>
+                        <span class="thread-title">${escapeHTML(thread.title)}</span>
                     </div>
                     <div class="thread-body">
                         <p>${escapeHTML(thread.body)}</p>

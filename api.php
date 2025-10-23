@@ -88,15 +88,30 @@ if ($method === 'GET') {
             //取得した全データを連想配列形式(名前付きのキーに値をセットして使う配列)で取り出す
             $profiles = $stmt->fetchAll(PDO::FETCH_ASSOC); 
 
-            //自然順ソートで並べる
-            //usort()は配列を、自分で決めたルールで並び替える関数
-            //strnatcmp()は自然順比較を行う関数（数字を数値として比較）demo2がdemo10よりも先に並ぶ
-            usort($profiles, function($a, $b) use ($order) {
-                $cmp = strnatcmp($a['username'], $b['username']);
-                //降順なら結果を逆に
-                return ($order === 'desc') ? -$cmp : $cmp;
-            });
+            // 並び替えタイプを取得（デフォルトはusername）
+            $sortType = $_GET['sort'] ?? 'username';
 
+            // ソート処理の分岐
+            if ($sortType === 'newest') {
+                //新着順ソート：更新日時（updated_at）が新しいものを上に
+                usort($profiles, function($a, $b) {
+                    // null（更新日なし）なら一番古い扱いにする
+                    $a_date = $a['updated_at'] ?? '1970-01-01 00:00:00';
+                    $b_date = $b['updated_at'] ?? '1970-01-01 00:00:00';
+                    // strtotime()で日時を数値に変換して比較（降順）
+                    return strtotime($b_date) <=> strtotime($a_date);
+                });
+            } else {
+                //名前順ソート（自然順）
+                //自然順ソートで並べる
+                //usort()は配列を、自分で決めたルールで並び替える関数
+                //strnatcmp()は自然順比較を行う関数（数字を数値として比較）demo2がdemo10よりも先に並ぶ
+                $order = $_GET['order'] ?? 'asc';
+                usort($profiles, function($a, $b) use ($order) {
+                    $cmp = strnatcmp($a['username'], $b['username']);
+                    return ($order === 'desc') ? -$cmp : $cmp;
+                });
+            }
             //ページング処理
             //総ユーザ数（配列の件数を数える）
             //SQLで再カウントするより、取得済みの配列を数える（よりシンプル）

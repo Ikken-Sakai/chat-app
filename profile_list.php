@@ -27,8 +27,8 @@ require_login();
 
         <div class="nav-links">
             <p><?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>さんとしてログイン中</p>
-            <a href="thread_list.php" class="btn btn-secondary">スレッド一覧へ</a>
             <a href="logout.php" class="btn btn-secondary">ログアウト</a>
+            <a href="thread_list.php" class="btn btn-secondary">スレッド一覧へ</a>
             <button id="refreshBtn" class="btn btn-secondary">↻</button> 
         </div>
 
@@ -38,6 +38,7 @@ require_login();
             並び替え:
             <button class="sort-btn" data-sort="username" data-order="asc">氏名順 (昇順)</button>
             <button class="sort-btn" data-sort="username" data-order="desc">氏名順 (降順)</button>
+            <button class="sort-btn" data-sort="newest" data-order="desc">新着順</button>
             </div>
 
         <div id="profile-list"></div>

@@ -161,7 +161,7 @@ require_login();
                 // 自分のであれば、「編集」ボタンのHTMLを作る (そうでなければ空文字)
                 const editLink = isOwner ? `
                     <a href="profile_edit.php" class="btn btn-sm btn-secondary edit-link">編集</a>
-                ` : ''; // profile_edit.php はまだ作っていない
+                ` : ''; 
 
                 // プロフィール情報を表示するHTMLを組み立てる
                 //      - 安全のため escapeHTML を通す
@@ -214,7 +214,7 @@ require_login();
             //並び替えたら必ず1ページ目に戻す
             currentPage = 1; 
             
-            // (6) 親方 (fetchAndDisplayProfiles) を呼び出して、新しい条件で一覧を再取得・表示させる
+            // fetchAndDisplayProfilesを呼び出して、新しい条件で一覧を再取得・表示させる
             fetchAndDisplayProfiles(); 
         }
 
@@ -270,7 +270,7 @@ require_login();
             link.style.margin = '0 5px'; // 見た目の調整
             link.style.padding = '5px 8px';
             
-            // (3) リンクに「クリックされたらこれをやってね」と教える (addEventListener)
+            // リンクに押下時の指示を追加 (addEventListener)
             link.addEventListener('click', (event) => {
                 event.preventDefault(); // リンク本来の動き(ページ遷移)を止める
                 if (currentPage !== page) { // もし今表示中のページと同じリンクじゃなければ
@@ -282,23 +282,23 @@ require_login();
         }
 
         /**
-         * 【安全係】XSS対策のためのHTMLエスケープ関数 (文字を安全な形に変換)
+         * XSS対策のためのHTMLエスケープ関数 (文字を安全な形に変換)
          */
         function escapeHTML(str) {
             // (内容は thread_list.php と同じ)
             return str ? String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]) : '';
         }
         
-        // --- イベントの設定 ---
-        // もし「↻ 更新」ボタンが存在したら
+        // イベントの設定
+        // もし「↻」ボタンが存在したら
         if ($refreshBtn) { 
-            // 「クリックされたら親方 (fetchAndDisplayProfiles) を呼んでね」と教える
+            // 押下時にfetchAndDisplayProfiles) を呼んでね」と教える
             $refreshBtn.addEventListener('click', fetchAndDisplayProfiles); 
         }
 
-        // --- 最初の実行 ---
+        // 最初の実行
         // ブラウザがページのHTMLを全部読み終わったら (DOMContentLoaded)
-        // 最初に親方 (fetchAndDisplayProfiles) を呼んで、プロフィール一覧を表示させる
+        // 最初にfetchAndDisplayProfilesを呼んで、プロフィール一覧を表示させる
         document.addEventListener('DOMContentLoaded', fetchAndDisplayProfiles); 
     </script>
 </body>

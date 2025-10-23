@@ -25,6 +25,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         <div class="nav-links">
             <p><?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>さんとしてログイン中</p>
             <a href="new_thread.php" class="btn btn-primary">新規スレッド作成</a>
+            <a href="profile_list.php" class="btn btn-secondary">プロフィール一覧へ</a>
             <a href="logout.php" class="btn btn-secondary">ログアウト</a>
             <button id="refreshBtn" class="btn btn-secondary">↻</button>
         </div>

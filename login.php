@@ -63,18 +63,11 @@ header('Content-Type: text/html; charset=UTF-8');
   <meta charset="UTF-8">
   <title>ログイン | スレッドアプリ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css"> </head>
+  <link rel="stylesheet" href="style.css">
+</head>
 <body>
-  <div class="container">
-  <h1>ログイン</h1>
-
-    <?php if (isset($success)): ?>
-      <div class="success"><?= htmlspecialchars($success, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
-
-    <?php if ($error !== ''): ?>
-      <div class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
-    <?php endif; ?>
+  <div class="login-container">
+    <h1>ログイン</h1>
 
     <?php if ($error !== ''): ?>
       <div class="error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
@@ -83,16 +76,16 @@ header('Content-Type: text/html; charset=UTF-8');
     <form method="post" action="">
       <label for="username">ユーザー名</label>
       <input type="text" id="username" name="username" required value="<?= isset($username) ? htmlspecialchars($username, ENT_QUOTES, 'UTF-8') : '' ?>">
+
       <label for="password">パスワード</label>
       <input type="password" id="password" name="password" required>
-      <button type="submit" class="btn btn-primary">ログイン</button>
-      <a href="register.php" class="btn btn-secondary">新規登録</a>
+
+      <button type="submit">ログイン</button>
     </form>
 
-    
+    <form action="register.php" method="get">
+      <button type="submit" class="register-btn">新規登録</button>
+    </form>
   </div>
-
-  
-
 </body>
 </html>

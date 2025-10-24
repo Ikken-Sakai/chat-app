@@ -404,8 +404,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             //loggedInUserIdがnullでないことも確認
             const isReplyOwner = (loggedInUserId !== null && reply.user_id === loggedInUserId);
             // 所有者なら編集・削除ボタンのHTMLを生成 (返信ボタンには識別用クラスも付与)
-            const replyOwnerActions = isReplyOwner ?`
-                <a href="edit_post.php?id=${reply.id}" class="btn btn-sm btn-secondary reply-edit-btn">編集</a>
+            const replyOwnerActions = isReplyOwner ? `
+                <button class="btn btn-sm btn-secondary edit-reply-btn" data-reply-id="${reply.id}">編集</button>
                 <button class="btn btn-sm btn-danger delete-btn reply-delete-btn" data-post-id="${reply.id}">🗑️</button>
             ` : '';
 
@@ -591,7 +591,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     }
                 }
                 alert('削除しました。'); // メッセージ修正
-
             } catch (error) {
                 // エラーが発生した場合
                 alert('エラー: ' + error.message);
@@ -601,6 +600,68 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             } 
             // finally ブロックは削除処理では不要 (成功したら要素ごと消えるため)
         }
+
+        //--------------------------------------------------------------
+        // ▼ 返信の編集処理（非同期）
+        //--------------------------------------------------------------
+        document.addEventListener('click', async function (e) {
+        if (e.target.classList.contains('edit-reply-btn')) {
+            const replyDiv = e.target.closest('.reply-item');
+            const replyId = e.target.dataset.replyId;
+            const bodyP = replyDiv.querySelector('p');
+            const oldText = bodyP.textContent;
+
+            // 編集用フォームに変換
+            const textarea = document.createElement('textarea');
+            textarea.value = oldText;
+            textarea.classList.add('edit-textarea');
+            bodyP.replaceWith(textarea);
+
+            // 保存ボタンを追加
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = '保存';
+            saveBtn.classList.add('btn', 'btn-sm', 'btn-primary');
+            e.target.after(saveBtn);
+            e.target.disabled = true;
+
+            saveBtn.addEventListener('click', async () => {
+                const newText = textarea.value.trim();
+                if (!newText) {
+                    alert('本文を入力してください');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'edit_reply',
+                            reply_id: replyId,
+                            body: newText
+                        })
+                    });
+
+                    const result = await res.json();
+                    if (result.success) {
+                        // 成功時、本文を即時更新
+                        const newBody = document.createElement('p');
+                        newBody.textContent = result.new_body;
+                        textarea.replaceWith(newBody);
+                        saveBtn.remove();
+                        e.target.disabled = false;
+                    } else {
+                        alert(result.error || '更新に失敗しました');
+                    }
+                } catch (err) {
+                    console.error('通信エラー:', err);
+                    alert('サーバー通信に失敗しました');
+                }
+            });
+        }
+    });
+
+
 
         //============================================================
         // XSS対策（文字列エスケープ）

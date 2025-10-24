@@ -471,8 +471,41 @@ if ($method === 'POST') {
             header('HTTP/1.1 201 Created');
             echo json_encode(['message' => '返信が投稿されました。']);
 
+        //返信編集処理（非同期）
+        }elseif (isset($data['action']) && $data['action'] === 'edit_reply') {
+            // 返信編集専用API
+            // 入力データを安全に取得
+            $reply_id = (int)($data['reply_id'] ?? 0);
+            $body = trim($data['body'] ?? '');
+
+            // バリデーション
+            if ($reply_id <= 0 || $body === '') {
+                echo json_encode(['error' => '不正なデータです。']);
+                exit;
+            }
+
+            // ログイン中ユーザーのみ編集可能
+            $user_id = $_SESSION['user']['id'];
+
+            // 自分の返信であるか確認
+            $check = $pdo->prepare('SELECT user_id FROM posts WHERE id = ?');
+            $check->execute([$reply_id]);
+            $reply = $check->fetch(PDO::FETCH_ASSOC);
+
+            if (!$reply || $reply['user_id'] !== $user_id) {
+                echo json_encode(['error' => '権限がありません。']);
+                exit;
+            }
+
+            // DB更新
+            $stmt = $pdo->prepare('UPDATE posts SET body = ?, updated_at = NOW() WHERE id = ?');
+            $stmt->execute([$body, $reply_id]);
+
+            echo json_encode(['success' => true, 'new_body' => htmlspecialchars($body, ENT_QUOTES, 'UTF-8')]);
+            exit;
+
         // 上記以外は、新規スレッド作成として処理
-        } else {
+        }else {
             //バリデーション：titleとbodyが空でないかチェック
             if (empty($data['title']) || empty($data['body'])) {
                 header('HTTP/1.1 400 Bad Request');

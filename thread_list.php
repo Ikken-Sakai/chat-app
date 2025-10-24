@@ -178,33 +178,53 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     <button class="btn btn-sm btn-danger delete-btn" data-post-id="${thread.id}">🗑️</button>
                 ` : '';
 
-                threadElement.innerHTML = `
-                    <div class="thread-header">
-                        <span class="thread-meta">投稿者: ${escapeHTML(thread.username)}</span>
-                        <span class="thread-title">${escapeHTML(thread.title)}</span>
+            threadElement.innerHTML = `
+                <div class="thread-header">
+                    <div class="thread-header-left">
+                    <span class="thread-meta">投稿者: ${escapeHTML(thread.username)}</span>
+                    <span class="thread-title">${escapeHTML(thread.title)}</span>
                     </div>
-                    <div class="thread-body">
-                        <p>${escapeHTML(thread.body)}</p>
-                        ${thread.updated_at && thread.updated_at !== thread.created_at
-                            ? `<small class="edited-label">（編集済み: ${thread.updated_at}）</small>`
-                            : ''}
+                    <div class="thread-header-right">
+                    <span class="thread-date">${thread.created_at}</span>
+                    ${thread.updated_at && thread.updated_at !== thread.created_at
+                        ? `<small class="edited-label">（編集済み: ${thread.updated_at}）</small>`
+                        : ''}
                     </div>
+                </div>
 
-                    <div class="thread-footer">
-                        <span>投稿日時: ${thread.created_at}</span>
-                        ${ownerActions}
-                        <button class="show-replies-btn" data-thread-id="${thread.id}" data-reply-count="${thread.reply_count}">返信${thread.reply_count}件</button>
+                <div class="thread-body">
+                    <p>${escapeHTML(thread.body)}</p>
+                </div>
+
+                <div class="thread-info">
+                    <div class="thread-info-left">
+                    <button class="show-replies-btn" data-thread-id="${thread.id}" data-reply-count="${thread.reply_count}">
+                        返信${thread.reply_count}件
+                    </button>
                     </div>
-                    <div class="replies-container" id="replies-for-${thread.id}" style="display: none;"></div>
-                    
-                    <form class="reply-form" data-parent-id="${thread.id}">
-                        <textarea name="body" placeholder="返信を入力..." required rows="2"></textarea>
-                        <button type="submit">返信する</button>
-                    </form>
+                    <div class="action-buttons">
+                    ${thread.user_id === loggedInUserId ? `
+                        <button class="btn-edit" onclick="location.href='edit_post.php?id=${thread.id}'">編集</button>
+                        <button class="btn-delete delete-btn" data-post-id="${thread.id}">削除</button>
+                    ` : ''}
+                    </div>
+                </div>
+
+                <hr class="divider">
+
+                <div class="replies-container" id="replies-for-${thread.id}" style="display: none;"></div>
+
+                <form class="reply-form" data-parent-id="${thread.id}">
+                    <textarea name="body" placeholder="返信を入力..." required rows="2"></textarea>
+                    <button type="submit" class="btn-reply">返信する</button>
+                </form>
                 `;
-                $threadList.appendChild(threadElement);
-            });
-            
+
+
+
+            //DOMに追加
+            $threadList.appendChild(threadElement);
+        }); 
             // ループですべてのスレッドを描画し終わった後に、ボタンの準備を一度だけ行う
             setupReplyButtons();
             // 返信フォームの準備を行う関数を呼び出す

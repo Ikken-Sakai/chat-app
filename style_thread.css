@@ -235,3 +235,60 @@ h1 {
     color: #b00020;
     text-align: center;
 }
+/* 投稿者とタイトルを横並び */
+.thread-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;  /* 投稿者とタイトルの間隔 */
+    flex-wrap: wrap;
+}
+
+/* タイトルを少し強調 */
+.thread-title {
+    font-weight: bold;
+    border: 1px solid #aaa;
+    background: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* 日時と編集済みラベルを右寄せ */
+.thread-header-right {
+    text-align: right;
+}
+
+.thread-date {
+    font-size: 13px;
+    color: #666;
+}
+
+.edited-label {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+}
+.thread-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.thread-info-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.show-replies-btn {
+  padding: 4px 10px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  background: #f5f5f5;
+  cursor: pointer;
+}
+
+.show-replies-btn:hover {
+  background: #e0e0e0;
+}

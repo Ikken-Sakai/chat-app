@@ -1,0 +1,237 @@
+/* =============================
+   スレッド一覧画面用スタイル
+   ============================= */
+
+/* ページ全体 */
+body {
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background-color: #ffffff;
+    color: #222;
+    margin: 0;
+    padding: 0;
+}
+
+/* コンテナ全体 */
+.container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 40px auto;
+}
+
+/* タイトル */
+h1 {
+    text-align: center;
+    font-size: 42px;
+    margin-bottom: 20px;
+}
+
+/* ナビゲーションエリア */
+.nav-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+.nav-links p {
+    margin: 0 10px 0 0;
+    font-weight: bold;
+}
+.nav-links .btn {
+    padding: 6px 14px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #f8f8f8;
+    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+}
+.nav-links .btn:hover {
+    background: #e0e0e0;
+}
+
+/* ソートボタン */
+.sort-controls {
+    text-align: right;
+    margin-bottom: 20px;
+}
+.sort-controls .sort-btn {
+    border: 1px solid #999;
+    background: #f5f5f5;
+    border-radius: 3px;
+    padding: 4px 10px;
+    margin-left: 5px;
+    cursor: pointer;
+}
+.sort-controls .sort-btn:hover {
+    background: #eaeaea;
+}
+
+/* スレッド全体 */
+.thread-item {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 25px;
+    background: #eeeeee;
+}
+
+/* スレッドヘッダー部分 */
+.thread-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.thread-meta {
+    font-weight: bold;
+}
+.thread-title {
+    flex: 1;
+    margin: 0 15px;
+    border: 1px solid #aaa;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background-color: #fff;
+}
+.thread-header small {
+    font-size: 12px;
+    color: #555;
+}
+
+/* 本文部分 */
+.thread-body {
+    margin: 10px 0;
+}
+.thread-body p {
+    margin: 6px 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    border: 1px solid #aaa;
+    border-radius: 3px; 
+    padding: 8px 10px;
+    background-color: #fff;
+}
+
+/* 返信ボタン行 */
+.thread-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+.thread-footer span {
+    font-size: 13px;
+    color: #444;
+}
+.thread-footer button {
+    padding: 4px 10px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    background: #f5f5f5;
+    cursor: pointer;
+}
+.thread-footer button:hover {
+    background: #e0e0e0;
+}
+
+/* 返信入力フォーム */
+.reply-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+.reply-form textarea {
+    flex: 1;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 14px;
+    resize: vertical;
+}
+.reply-form button {
+    padding: 6px 12px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #f5f5f5;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.reply-form button:hover {
+    background: #e0e0e0;
+}
+
+/* 返信リスト部分 */
+.replies-container {
+    margin-top: 8px;
+    border-left: 3px solid #aaa;
+    padding-left: 10px;
+    background: #fafafa;
+}
+.reply-item {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 6px;
+    background: #fff;
+}
+.reply-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #666;
+}
+
+/* 全件表示ボタン */
+.show-all-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 5px 0;
+    margin-bottom: 6px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #f9f9f9;
+    cursor: pointer;
+}
+.show-all-btn:hover {
+    background: #eee;
+}
+
+/* ページネーション */
+.pagination {
+    text-align: center;
+    margin: 30px 0;
+}
+.pagination a, .pagination strong {
+    display: inline-block;
+    padding: 6px 10px;
+    margin: 0 3px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #222;
+}
+.pagination strong {
+    background: #e0e0e0;
+}
+
+/* 編集済みラベル */
+.edited-label {
+    font-size: 12px;
+    color: #999;
+}
+
+/* メッセージ系 */
+.error {
+    color: #b00020;
+    text-align: center;
+}

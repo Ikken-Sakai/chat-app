@@ -5,7 +5,7 @@
 /* ページ全体 */
 body {
     font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-    background-color: #e2e2e2;
+    background-color: #ffffff;
     margin: 0;
     min-height: 100vh;
     display: flex;
@@ -13,24 +13,36 @@ body {
     align-items: center;      /* 上下中央 */
 }
 
+/* メイン枠 */
+.login-container {
+    width: 90%;
+    max-width: 1000px;
+    padding: 50px 20px;
+    margin: 60px 0;
+    box-sizing: border-box;
+    background: #dbdbdb;
+}
+
 /* 見出し */
 h1 {
     text-align: center;
     font-size: 50px;
-    margin-bottom: 80px;
 }
 
 /* ラベルと入力欄 */
 label {
+    width: 80%;
     display: block;
     font-weight: bold;
-    margin: 18px 0 6px;
+    margin: 0 auto;
     font-size: 15px;
 }
 
 input[type="text"],
 input[type="password"] {
-    width: 100%;
+    width: 80%;
+    display: block;
+    margin: 0 auto;
     padding: 12px;
     border: 1px solid #aaa;
     border-radius: 5px;
@@ -41,7 +53,9 @@ input[type="password"] {
 
 /* ボタン */
 button, .register-btn {
-    width: 100%;
+    width: 80%;
+    display: block;
+    margin: 0 auto;
     padding: 14px;
     border: 1px solid #333;
     border-radius: 6px;
@@ -49,6 +63,7 @@ button, .register-btn {
     cursor: pointer;
     font-size: 16px;
     margin-top: 10px;
+    margin-bottom: 20px;
     box-sizing: border-box;
 }
 

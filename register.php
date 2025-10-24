@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
+  <div class="login-container">
     <h1>新規ユーザー登録</h1>
 
     <?php if ($error !== ''): ?>
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       
       <style>
           form { display: none; } 
-          .container > a.btn-secondary { display: none; } /* 戻るボタンも非表示 */
+          .login-container > a.btn-secondary { display: none; } /* 戻るボタンも非表示 */
       </style>
 
     <?php else: ?>
@@ -104,7 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <button type="submit" class="btn btn-success">登録</button>
-        <a href="login.php" class="btn btn-secondary" style="margin-top: 10px;">戻る</a>
+      </form>
+
+      <form action="login.php" method="get">
+        <button type="submit" class="register-btn">戻る</button>
       </form>
     <?php endif; ?>
   </div>

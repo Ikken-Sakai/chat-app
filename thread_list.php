@@ -185,7 +185,11 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     </div>
                     <div class="thread-body">
                         <p>${escapeHTML(thread.body)}</p>
+                        ${thread.updated_at && thread.updated_at !== thread.created_at
+                            ? `<small class="edited-label">（編集済み: ${thread.updated_at}）</small>`
+                            : ''}
                     </div>
+
                     <div class="thread-footer">
                         <span>投稿日時: ${thread.created_at}</span>
                         ${ownerActions}
@@ -415,7 +419,11 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 <div class="reply-meta">
                     <span>投稿者: ${escapeHTML(reply.username)}</span>
                     <span>投稿日時: ${reply.created_at}</span>
-                    ${replyOwnerActions}
+                    ${reply.updated_at && reply.updated_at !== reply.created_at
+                        ? `<small class="edited-label">（編集済み: ${reply.updated_at}）</small>`
+                        : ''}
+
+                ${replyOwnerActions}
                 </div>
             `;
             return replyElement;
@@ -648,6 +656,13 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         const newBody = document.createElement('p');
                         newBody.textContent = result.new_body;
                         textarea.replaceWith(newBody);
+
+                        // 編集済みラベルを追加
+                        const editedLabel = document.createElement('small');
+                        editedLabel.classList.add('edited-label');
+                        editedLabel.textContent = '（編集済み）';
+                        newBody.after(editedLabel);
+
                         saveBtn.remove();
                         e.target.disabled = false;
                     } else {

@@ -229,8 +229,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             setupReplyButtons();
             // 返信フォームの準備を行う関数を呼び出す
             setupReplyForms();
-            // 削除ボタンの準備を行う関数を呼び出す
-            setupDeleteButtons();
         }
 
         //============================================================
@@ -403,8 +401,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         repliesContainer.prepend(showAllBtn);
                     }
 
-                    // 削除ボタンを再設定
-                    setupDeleteButtons();
                 }
 
                 // 返信表示中にボタンのテキストを変更
@@ -450,7 +446,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         <div class="reply-right-buttons">
                             ${reply.user_id === loggedInUserId ? `
                                 <button class="btn btn-sm btn-secondary edit-reply-btn" data-reply-id="${reply.id}">編集</button>
-                                <button class="btn btn-sm btn-danger delete-btn reply-delete-btn" data-post-id="${reply.id}">🗑️</button>
+                                <button class="btn btn-sm btn-danger delete-btn reply-delete-btn" data-post-id="${reply.id}">削除</button>
                             ` : ''}
                         </div>
                     </div>
@@ -536,29 +532,13 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         /**
          * ページ上の全ての削除ボタンにクリックイベントを設定する関数
          */
-        function setupDeleteButtons() {
-            // '.delete-btn' というクラスを持つ全てのボタン要素を取得
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                // 同じボタンに何度もイベントを追加しないように、古いイベントを削除して新しいイベントを設定
-                // cloneNode(true) でボタンを複製し、replaceWithで元のボタンと入れ替える
-                const newButton = button.cloneNode(true);
-                // 元のボタンの親要素が存在する場合のみ置換を実行 (削除済みの要素へのアクセスを防ぐ)
-                if (button.parentNode) {
-                    button.parentNode.replaceChild(newButton, button);
-                }
-                
-                // 新しいボタンにクリックイベントリスナーを追加
-                newButton.removeEventListener('click', handleDeleteButtonClick); // 既存のリスナーを削除
-                newButton.addEventListener('click', handleDeleteButtonClick); // 新しい関数を参照
-            });
+        document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+            const button = e.target;
+            const postId = button.dataset.postId;
+            deletePost(postId, button);
         }
-        
-        // 削除ボタンクリック時のイベントハンドラ関数を分離 (deletePostを呼び出すだけ)
-        function handleDeleteButtonClick(event) {
-             const button = event.currentTarget; // クリックされたボタン要素
-             const postId = button.dataset.postId;
-             deletePost(postId, button); 
-        }
+        });
 
         /**
          * 投稿を削除する処理を行う非同期関数
@@ -592,13 +572,15 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 postElement.remove();
 
                 // 返信削除時は件数ボタンを更新
-                if (isReply) {
-                    const parentThreadItem = buttonElement.closest('.thread-item');
-                    const replyCountButton = parentThreadItem.querySelector('.show-replies-btn');
-                    const currentCount = parseInt(replyCountButton.dataset.replyCount || '0', 10);
-                    const newCount = Math.max(currentCount - 1, 0);
-                    replyCountButton.dataset.replyCount = newCount;
-                    replyCountButton.textContent = `返信${newCount}件`;
+                if (isReply) {  
+                    const parentThreadItem = buttonElement.closest('.thread-item');   // 削除された返信の親スレッド要素を取得  
+                    if (!parentThreadItem) return; // ←親スレッドが見つからない場合は処理中断  
+                    const replyCountButton = parentThreadItem.querySelector('.show-replies-btn'); // 「返信○件」ボタンを取得  
+                    if (!replyCountButton) return; // ←ボタンが存在しない場合は処理中断 
+                    const currentCount = parseInt(replyCountButton.dataset.replyCount || '0', 10); // 現在の返信数を数値として取得（なければ0）  
+                    const newCount = Math.max(currentCount - 1, 0);  // 返信を1減らし、0未満にならないように調整  
+                    replyCountButton.dataset.replyCount = newCount;  // 新しい返信数をデータ属性に反映  
+                    replyCountButton.textContent = `返信${newCount}件`; // ボタンの表示テキストを更新  
 
                     // 返信が0件なら「まだ返信がありません」を表示
                     const repliesContainer = parentThreadItem.querySelector('.replies-container');

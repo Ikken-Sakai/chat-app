@@ -367,7 +367,9 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             repliesContainer.style.display = 'block';
 
             try {
-                const response = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}`);
+                const response = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, {
+                    cache: "no-store"
+                });
                 if (!response.ok) throw new Error(`HTTPエラー: ${response.status}`);
                 const replies = await response.json();
                 repliesContainer.innerHTML = '';
@@ -388,18 +390,38 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
                     // 3件より多い場合は「全件表示」ボタンを上に追加
                     if (replies.length > MAX_VISIBLE) {
-                        const showAllBtn = document.createElement('button');
-                        showAllBtn.textContent = `全${replies.length}件の返信をすべて表示`;
-                        showAllBtn.className = 'show-all-btn';
-                        showAllBtn.addEventListener('click', () => {
+
+                    // --- 返信が多い場合のみ「全件表示」ボタンを追加 ---
+                    const showAllBtn = document.createElement('button');
+                    showAllBtn.textContent = `全${replies.length}件の返信をすべて表示`;
+                    showAllBtn.className = 'show-all-btn';
+
+                    // 「全件表示」ボタンが押されたときの処理
+                    showAllBtn.addEventListener('click', async () => {
+                        try {
+                            // 最新の返信データを再取得（キャッシュを避けるため現在時刻をパラメータに付与）
+                            const newResponse = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, { cache: "no-store" });
+                            const latestReplies = await newResponse.json();
+
+                            // 古い返信を一旦消してから、新しい返信をすべて表示
                             repliesContainer.innerHTML = '';
-                            replies.forEach(reply => {
-                                repliesContainer.appendChild(createReplyElement(reply));
+                            latestReplies.forEach(reply => {
+                                repliesContainer.appendChild(createReplyElement(reply)); // 返信を1件ずつ表示
                             });
-                            showAllBtn.remove();
-                        });
-                        repliesContainer.prepend(showAllBtn);
-                    }
+
+                        } catch (error) {
+                            // 通信エラー時はメッセージを表示
+                            repliesContainer.innerHTML = `<p class="error">再読み込みに失敗しました: ${error.message}</p>`;
+                        }
+
+                        // ボタンは一度押したら消す（2重押下防止）
+                        showAllBtn.remove();
+                    });
+
+                    // 返信リストの一番上にボタンを追加
+                    repliesContainer.prepend(showAllBtn);
+                }
+
 
                 }
 
@@ -495,10 +517,14 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     })
                 });
 
-                if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.error || `HTTPエラー: ${response.status}`);
-                }
+            let result;
+            try {
+                result = await response.json();
+            } catch {
+                result = { error: `HTTPエラー: ${response.status}` };
+            }
+            if (!response.ok) throw new Error(result.error || `HTTPエラー: ${response.status}`);
+
 
                 // (2) 返信送信が完了したら、返信欄を自動で開く
                 const repliesContainer = document.getElementById(`replies-for-${parentId}`);
@@ -530,14 +556,16 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         // 投稿削除
         //============================================================
         /**
-         * ページ上の全ての削除ボタンにクリックイベントを設定する関数
+         * ページ全体にクリックイベントを設定し、
+         * 「削除」ボタンが押されたときのみ削除処理を呼び出す。
+         * （イベントデリゲーションで、新しく生成されたボタンにも対応）
          */
         document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('delete-btn')) {
-            const button = e.target;
-            const postId = button.dataset.postId;
-            deletePost(postId, button);
-        }
+            if (e.target.classList.contains('delete-btn')) { // 削除ボタンが押されたかを判定
+                const button = e.target;                     // 押された削除ボタンを取得
+                const postId = button.dataset.postId;        // ボタンに埋め込まれた投稿IDを取得
+                deletePost(postId, button);                  // 削除処理を呼び出し
+            }
         });
 
         /**
@@ -546,30 +574,32 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
          * @param {HTMLElement} buttonElement - クリックされた削除ボタン要素
          */
         async function deletePost(postId, buttonElement) {
-            if (!confirm('本当にこの投稿を削除しますか？')) return;
+            if (!confirm('本当にこの投稿を削除しますか？')) return; // 確認ダイアログでキャンセルされたら処理中止
 
-            buttonElement.disabled = true;
-            buttonElement.textContent = '削除中...';
+            //処理中はボタンを無効化、テキストを変更
+            buttonElement.disabled = true;         // 二重クリック防止のためボタンを無効化
+            buttonElement.textContent = '削除中...'; // ユーザーに処理中であることを表示
 
             try {
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                //APIに削除リクエスト送信
+                const response = await fetch(API_ENDPOINT, { // APIに非同期通信で削除リクエストを送る
+                    method: 'POST',                          // POSTメソッドを使用
+                    headers: { 'Content-Type': 'application/json' }, // JSON形式で送信
                     body: JSON.stringify({
-                        action: 'delete',
-                        id: postId
+                        action: 'delete', //APIに削除セクションと伝える
+                        id: postId        //APIに削除対象のIDを伝える
                     })
                 });
 
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || `HTTPエラー: ${response.status}`);
+                const result = await response.json(); // APIからの応答をJSONとして取得
+                if (!response.ok) throw new Error(result.error || `HTTPエラー: ${response.status}`); // エラー時は例外を投げる
 
                 // 返信かどうか判定
-                const isReply = buttonElement.classList.contains('reply-delete-btn');
+                const isReply = buttonElement.classList.contains('reply-delete-btn'); // 返信削除ボタンならtrue
 
                 // DOMから削除
-                const postElement = buttonElement.closest(isReply ? '.reply-item' : '.thread-item');
-                postElement.remove();
+                const postElement = buttonElement.closest(isReply ? '.reply-item' : '.thread-item'); // 投稿または返信のHTML要素を探す
+                if (postElement) postElement.remove(); // 画面上から該当の投稿を削除
 
                 // 返信削除時は件数ボタンを更新
                 if (isReply) {  
@@ -582,24 +612,38 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     replyCountButton.dataset.replyCount = newCount;  // 新しい返信数をデータ属性に反映  
                     replyCountButton.textContent = `返信${newCount}件`; // ボタンの表示テキストを更新  
 
-                    // 返信が0件なら「まだ返信がありません」を表示
+                    // ここで強制的に再描画（表示状態も維持）
+                    const parentId = replyCountButton.dataset.threadId;
                     const repliesContainer = parentThreadItem.querySelector('.replies-container');
-                    if (newCount === 0 && repliesContainer) {
-                        repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
+                    if (parentId && repliesContainer) {
+                        repliesContainer.style.display = 'block'; // 非表示にならないように強制表示
+                        repliesContainer.innerHTML = '<p>更新中...</p>'; // ローディング表示
+                        await fetchAndDisplayReplies(parentId, true); // 最新状態に再描画
+                    }
+
+                    // 返信が0件なら「まだ返信がありません」を表示
+                    if (newCount === 0) {
+                        const repliesContainer = parentThreadItem.querySelector('.replies-container');
+                        if (repliesContainer) {
+                            repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
+                        }
                     }
                 }
 
-                alert('削除しました。');
+                alert('削除しました。'); // 成功メッセージを表示
             } catch (error) {
-                alert('エラー: ' + error.message);
+                alert('エラー: ' + error.message); // エラー発生時はアラートで通知
+            
+            //エラーが発生したら元の状態に
             } finally {
-                buttonElement.disabled = false;
-                buttonElement.textContent = '削除';
+                buttonElement.disabled = false;     // ボタンを再び有効化
+                buttonElement.textContent = '削除'; // ボタンの表示を元に戻す
             }
         }
 
 
-        //--------------------------------------------------------------
+
+        //-----------------------------------------------------元の状態に
         // ▼ 返信の編集処理（非同期）
         //--------------------------------------------------------------
         document.addEventListener('click', async function (e) {

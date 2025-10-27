@@ -202,8 +202,8 @@ h1 {
 /* 返信メタ情報（名前・日時など） */
 .reply-meta {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-between; /* 左右に分ける */
+    align-items: flex-start; /* 上端揃え */
     flex-wrap: wrap;
     margin-top: 6px;
     font-size: 13px;
@@ -218,10 +218,33 @@ h1 {
 /* 右側（日時とボタン群） */
 .reply-right {
     display: flex;
-    align-items: center;
+    flex-direction: column; /* 縦並びに変更 */
+    align-items: flex-end;  /* 右詰め */
     justify-content: flex-end;
     gap: 6px;
 }
+
+/* 編集済みラベルを日時の右側にぴったり表示 */
+.reply-right .edited-label {
+    display: inline;          /* 横並びにする */
+    font-size: 12px;
+    color: #999;
+    margin-left: 4px;         /* 日時との間隔を調整 */
+    margin-top: 0;
+}
+
+.reply-right-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.reply-right-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
 
 /* =========================================
    【返信フォーム（テキスト入力＋ボタン）】

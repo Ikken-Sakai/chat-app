@@ -219,7 +219,8 @@ if ($method === 'GET') {
                     p.user_id, 
                     p.body, 
                     p.created_at, 
-                    u.username
+                    u.username,
+                    p.updated_at
                 FROM 
                     posts AS p
                 JOIN 

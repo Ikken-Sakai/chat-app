@@ -441,14 +441,22 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         <span>投稿者: ${escapeHTML(reply.username)}</span>
                     </div>
                     <div class="reply-right">
-                        <span class="reply-date">投稿日時: ${reply.created_at}</span>
-                        ${reply.updated_at && reply.updated_at !== reply.created_at
-                            ? `<small class="edited-label">（編集済み: ${reply.updated_at}）</small>`
-                            : ''}
-                        ${replyOwnerActions}
+                        <div class="reply-right-top">
+                            ${reply.updated_at && reply.updated_at !== reply.created_at
+                                ? `<small class="edited-label">（編集済み）</small>`
+                                : ''}
+                            <span class="reply-date">投稿日時: ${reply.created_at}</span>
+                        </div>
+                        <div class="reply-right-buttons">
+                            ${reply.user_id === loggedInUserId ? `
+                                <button class="btn btn-sm btn-secondary edit-reply-btn" data-reply-id="${reply.id}">編集</button>
+                                <button class="btn btn-sm btn-danger delete-btn reply-delete-btn" data-post-id="${reply.id}">🗑️</button>
+                            ` : ''}
+                        </div>
                     </div>
                 </div>
             `;
+
             return replyElement;
         }
 
@@ -558,79 +566,56 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
          * @param {HTMLElement} buttonElement - クリックされた削除ボタン要素
          */
         async function deletePost(postId, buttonElement) {
-            // ユーザーに最終確認のダイアログを表示
-            if (!confirm('本当にこの投稿を削除しますか？')) {
-                return; // 「キャンセル」が押されたら何もしないで処理を終了
-            }
+            if (!confirm('本当にこの投稿を削除しますか？')) return;
 
-            // 処理中はボタンを無効化し、テキストを変更
             buttonElement.disabled = true;
             buttonElement.textContent = '削除中...';
 
             try {
-                // APIに削除リクエストを送信
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'delete', // APIに削除アクションであることを伝える
-                        id: postId        // APIに削除対象のIDを伝える
+                        action: 'delete',
+                        id: postId
                     })
                 });
 
                 const result = await response.json();
-                if (!response.ok) {
-                    // APIからエラーが返された場合
-                    throw new Error(result.error || `HTTPエラー: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(result.error || `HTTPエラー: ${response.status}`);
 
-                // 画面からの即時削除
-                //削除要素の特定方法を修正
-                //親投稿か返信化で削除する要素を切り替え
-                const postElement = buttonElement.closest('.reply-item') || buttonElement.closest('.thread-item');
-                if (postElement) {
-                    // 親投稿(.thread-item) または 返信(.reply-item) の要素をDOMツリーから削除
-                    postElement.remove(); 
-                    // もし削除したのが返信なら、親投稿の返信件数も更新
-                    if (buttonElement.classList.contains('reply-delete-btn')) {
-                        // 削除された返信要素から、親のスレッド要素を探す
-                        const parentThreadItem = postElement.closest('.thread-item');
-                        if (parentThreadItem) {
-                            // 親スレッド要素の中から返信件数ボタンを探す
-                            const replyCountButton = parentThreadItem.querySelector('.show-replies-btn');
-                            // ボタンのdata属性から現在の件数を取得し、数値に変換
-                            const currentCount = parseInt(replyCountButton.dataset.replyCount);
-                            // 件数が有効な数値で、かつ0より大きい場合のみ処理
-                            if (!isNaN(currentCount) && currentCount > 0) {
-                                // 件数を1減らす
-                                const newCount = currentCount - 1;
-                                // ボタンのdata属性と表示テキストを更新
-                                replyCountButton.dataset.replyCount = newCount;
-                                const repliesContainer = parentThreadItem.querySelector('.replies-container');
-                                // 返信欄が開いている状態か閉じた状態かでテキストを調整
-                                if (repliesContainer.style.display === 'block') {
-                                     replyCountButton.textContent = '返信を隠す'; // 開いていたら隠すボタンのまま
-                                } else {
-                                     replyCountButton.textContent = `返信${newCount}件`;
-                                }
-                                // もし最後の返信だったら「まだ返信がありません」を表示 (開いている場合のみ)
-                                if (newCount === 0 && repliesContainer.style.display === 'block') {
-                                     repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
-                                }
-                            }
-                        }
+                // 返信かどうか判定
+                const isReply = buttonElement.classList.contains('reply-delete-btn');
+
+                // DOMから削除
+                const postElement = buttonElement.closest(isReply ? '.reply-item' : '.thread-item');
+                postElement.remove();
+
+                // 返信削除時は件数ボタンを更新
+                if (isReply) {
+                    const parentThreadItem = buttonElement.closest('.thread-item');
+                    const replyCountButton = parentThreadItem.querySelector('.show-replies-btn');
+                    const currentCount = parseInt(replyCountButton.dataset.replyCount || '0', 10);
+                    const newCount = Math.max(currentCount - 1, 0);
+                    replyCountButton.dataset.replyCount = newCount;
+                    replyCountButton.textContent = `返信${newCount}件`;
+
+                    // 返信が0件なら「まだ返信がありません」を表示
+                    const repliesContainer = parentThreadItem.querySelector('.replies-container');
+                    if (newCount === 0 && repliesContainer) {
+                        repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
                     }
                 }
-                alert('削除しました。'); // メッセージ修正
+
+                alert('削除しました。');
             } catch (error) {
-                // エラーが発生した場合
                 alert('エラー: ' + error.message);
-                // エラーが発生したらボタンの状態を元に戻す
+            } finally {
                 buttonElement.disabled = false;
                 buttonElement.textContent = '削除';
-            } 
-            // finally ブロックは削除処理では不要 (成功したら要素ごと消えるため)
+            }
         }
+
 
         //--------------------------------------------------------------
         // ▼ 返信の編集処理（非同期）
@@ -684,7 +669,15 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         const editedLabel = document.createElement('small');
                         editedLabel.classList.add('edited-label');
                         editedLabel.textContent = '（編集済み）';
-                        newBody.after(editedLabel);
+
+                        // 返信メタ情報（右側）を取得
+                        const replyRight = replyDiv.querySelector('.reply-right');
+                        if (replyRight) {
+                            const dateSpan = replyRight.querySelector('.reply-date');
+                            if (dateSpan && !replyRight.querySelector('.edited-label')) {
+                                dateSpan.before(editedLabel);
+                            }
+                        }
 
                         saveBtn.remove();
                         e.target.disabled = false;

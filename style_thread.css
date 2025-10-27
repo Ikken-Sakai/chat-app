@@ -203,8 +203,24 @@ h1 {
 .reply-meta {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 6px;
     font-size: 13px;
     color: #666;
+}
+
+/* 左側（投稿者） */
+.reply-left {
+    text-align: left;
+}
+
+/* 右側（日時とボタン群） */
+.reply-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
 }
 
 /* =========================================

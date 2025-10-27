@@ -437,13 +437,16 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             replyElement.innerHTML = `
                 <p>${escapeHTML(reply.body)}</p>
                 <div class="reply-meta">
-                    <span>投稿者: ${escapeHTML(reply.username)}</span>
-                    <span>投稿日時: ${reply.created_at}</span>
-                    ${reply.updated_at && reply.updated_at !== reply.created_at
-                        ? `<small class="edited-label">（編集済み: ${reply.updated_at}）</small>`
-                        : ''}
-
-                ${replyOwnerActions}
+                    <div class="reply-left">
+                        <span>投稿者: ${escapeHTML(reply.username)}</span>
+                    </div>
+                    <div class="reply-right">
+                        <span class="reply-date">投稿日時: ${reply.created_at}</span>
+                        ${reply.updated_at && reply.updated_at !== reply.created_at
+                            ? `<small class="edited-label">（編集済み: ${reply.updated_at}）</small>`
+                            : ''}
+                        ${replyOwnerActions}
+                    </div>
                 </div>
             `;
             return replyElement;

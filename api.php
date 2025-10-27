@@ -219,6 +219,7 @@ if ($method === 'GET') {
                     p.user_id, 
                     p.body, 
                     p.created_at, 
+                    p.updated_at,
                     u.username
                 FROM 
                     posts AS p
@@ -236,7 +237,11 @@ if ($method === 'GET') {
             $stmt->execute(); // 実行
             $replies = $stmt->fetchAll(PDO::FETCH_ASSOC); // 実行結果（返信データ）を全て取得し、PHPの配列に格納する
 
-            echo json_encode($replies); // 取得したPHP配列→JSON形式に変換して、ブラウザに返却
+
+            echo json_encode([
+                'count' => count($replies),
+                'replies' => $replies
+            ]);
         
         // パラメータがない場合：「親スレッド一覧」を返す
         } else {

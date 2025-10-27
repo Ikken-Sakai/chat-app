@@ -371,25 +371,34 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     cache: "no-store"
                 });
                 if (!response.ok) throw new Error(`HTTPエラー: ${response.status}`);
-                const replies = await response.json();
+
+                // APIが {count, replies} 形式でも単純配列でも動作するように
+                const data = await response.json();
+                const replies = data.replies || data;
+                const replyCount = data.count || replies.length;
+
                 repliesContainer.innerHTML = '';
 
-                if (replies.length === 0) {
+                // 件数をボタンに反映（削除後でも即更新される）
+                button.dataset.replyCount = replyCount;
+                button.textContent = replyCount === 0 ? '返信0件' : '返信を隠す';
+
+                if (replyCount === 0) {
                     repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
-                } else {
-                    // 最大3件まで表示（古い順で、下に新しい返信）
-                    const MAX_VISIBLE = 2;
-                    const visibleReplies = replies.length > MAX_VISIBLE
-                        ? replies.slice(-MAX_VISIBLE)
-                        : replies;
+                    return;
+                }
+                const MAX_VISIBLE = 2;
+                const visibleReplies = replies.length > MAX_VISIBLE
+                    ? replies.slice(-MAX_VISIBLE)
+                    : replies;
 
-                    // 返信の描画
-                    visibleReplies.forEach(reply => {
-                        repliesContainer.appendChild(createReplyElement(reply));
-                    });
+                // 返信の描画
+                visibleReplies.forEach(reply => {
+                    repliesContainer.appendChild(createReplyElement(reply));
+                });
 
-                    // 3件より多い場合は「全件表示」ボタンを上に追加
-                    if (replies.length > MAX_VISIBLE) {
+                // 3件より多い場合は「全件表示」ボタンを上に追加
+                if (replies.length > MAX_VISIBLE) {
 
                     // --- 返信が多い場合のみ「全件表示」ボタンを追加 ---
                     const showAllBtn = document.createElement('button');
@@ -401,13 +410,20 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         try {
                             // 最新の返信データを再取得（キャッシュを避けるため現在時刻をパラメータに付与）
                             const newResponse = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, { cache: "no-store" });
-                            const latestReplies = await newResponse.json();
+                            // APIが { count, replies } を返すため、柔軟に取り出す
+                            const newData = await newResponse.json();
+                            const latestReplies = newData.replies || newData; 
+                            const latestCount = newData.count || latestReplies.length; //件数も取得（後でUI更新用）
+
 
                             // 古い返信を一旦消してから、新しい返信をすべて表示
                             repliesContainer.innerHTML = '';
                             latestReplies.forEach(reply => {
                                 repliesContainer.appendChild(createReplyElement(reply)); // 返信を1件ずつ表示
                             });
+
+                            //「全〇件の返信をすべて表示」ボタンのテキストも最新化
+                            showAllBtn.textContent = `全${latestCount}件の返信をすべて表示`;
 
                         } catch (error) {
                             // 通信エラー時はメッセージを表示
@@ -421,10 +437,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     // 返信リストの一番上にボタンを追加
                     repliesContainer.prepend(showAllBtn);
                 }
-
-
-                }
-
                 // 返信表示中にボタンのテキストを変更
                 button.textContent = '返信を隠す';
 
@@ -610,7 +622,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     const currentCount = parseInt(replyCountButton.dataset.replyCount || '0', 10); // 現在の返信数を数値として取得（なければ0）  
                     const newCount = Math.max(currentCount - 1, 0);  // 返信を1減らし、0未満にならないように調整  
                     replyCountButton.dataset.replyCount = newCount;  // 新しい返信数をデータ属性に反映  
-                    replyCountButton.textContent = `返信${newCount}件`; // ボタンの表示テキストを更新  
 
                     // ここで強制的に再描画（表示状態も維持）
                     const parentId = replyCountButton.dataset.threadId;

@@ -1,0 +1,169 @@
+/* =========================================
+   投稿編集ページ (edit_thread.php)
+   ========================================= */
+
+/* --- ページ全体設定 --- */
+body {
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background-color: #ffffff;
+    color: #222;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- コンテナ全体 --- */
+.container {
+    width: 90%;
+    max-width: 700px;
+    margin: 60px auto;
+    text-align: center;
+}
+
+/* --- ページタイトル --- */
+h1 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 35px;
+}
+
+/* --- タイトル欄（右側で幅を広く取る） --- */
+.title-input {
+    flex: 1;                  /* 残り幅いっぱいに伸ばす */
+    padding: 8px 10px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #f4f4f4; /* 読み取り専用のためグレー */
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* --- メッセージ表示エリア --- */
+#message-area {
+    margin-bottom: 15px;
+    color: #444;
+}
+
+/* --- フォーム全体 --- */
+form {
+    border: 1.5px solid #333; /* 全体の枠線 */
+    border-radius: 6px;       /* 角丸 */
+    background: #fff;
+    padding: 30px;
+    text-align: left;         /* 入力欄を左寄せ */
+}
+
+/* --- 各入力ブロック --- */
+.form-group {
+    margin-bottom: 20px;
+}
+
+/* --- ラベル（項目名） --- */
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+/* --- タイトル入力欄（読み取り専用） --- */
+input[readonly] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    background-color: #f4f4f4; /* 編集不可の見た目 */
+    color: #666;
+    cursor: not-allowed;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* --- 投稿内容入力欄 --- */
+textarea {
+    width: 100%;
+    min-height: 150px; /* 適度な高さ */
+    padding: 8px 10px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 14px;
+    resize: vertical; /* 高さ変更OK */
+    box-sizing: border-box;
+}
+
+/* --- ボタン配置（中央寄せ・横並び） --- */
+form .btn-primary,
+form .btn-secondary {
+    display: inline-block;
+    padding: 8px 24px;
+    font-size: 16px;
+    border: 1.5px solid #333;
+    border-radius: 4px;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 20px;
+}
+
+/* --- ホバー時の色変更 --- */
+form .btn-primary:hover,
+form .btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+/* --- ボタンエリア全体 --- */
+form {
+    display: block; /* 以前の flex を解除 */
+    text-align: center; /* 全体を中央寄せ */
+}
+
+form .btn-area {
+    display: flex;
+    justify-content: center; /* 中央揃え */
+    gap: 40px; /* ボタン間のスペース */
+    margin-top: 25px;
+}
+
+/* --- ボタンの横並び --- */
+.btn-primary,
+.btn-secondary {
+    display: inline-block;
+    padding: 8px 24px;
+    font-size: 16px;
+    border: 1.5px solid #333;
+    border-radius: 4px;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+/* --- ユーザー名ボックス--- */
+.form-header {
+    display: flex;
+    align-items: center;      /* 縦位置を中央にそろえる */
+    gap: 10px;                /* 間隔を確保 */
+    margin-bottom: 20px;
+}
+
+.username-box {
+    font-weight: bold;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    padding: 6px 12px;
+    min-width: 100px;
+    text-align: center;
+}
+
+
+/* --- エラーメッセージ --- */
+.error {
+    color: #b00020;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+}

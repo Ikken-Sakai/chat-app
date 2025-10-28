@@ -8,7 +8,7 @@ require_login();
 <head>
     <meta charset="UTF-8">
     <title>投稿の編集</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_edit_thread.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
@@ -22,9 +22,11 @@ require_login();
         <form id="editPostForm" style="display: none;">
             <input type="hidden" name="id" value="">
 
-            <div class="form-group">
-                <label for="title">スレッドタイトル（編集できません）</label>
-                <input type="text" id="title" name="title" readonly>
+            <div class="form-header">
+                <div class="username-box">
+                    <?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <input type="text" id="title" name="title" class="title-input" readonly>
             </div>
             
             <div class="form-group">
@@ -32,8 +34,10 @@ require_login();
                 <textarea id="body" name="body" rows="8" required></textarea>
             </div>
 
-            <button type="submit" id="submitBtn" class="btn btn-primary">更新する</button>
-            <a href="thread_list.php" class="btn btn-secondary" style="margin-top: 10px;">一覧に戻る</a>
+            <div class="btn-area">
+                <a href="thread_list.php" class="btn btn-secondary">一覧に戻る</a>
+                <button type="submit" id="submitBtn" class="btn btn-primary">更新する</button>
+            </div>
         </form>
     </div>
 

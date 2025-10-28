@@ -17,36 +17,29 @@ $token = $_SESSION['form_token'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>新規スレッド作成</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_new_thread.css">
 </head>
 <body>
     <div class="container">
         <h1>新しいスレッドを作成</h1>
-
+        <!-- エラーを表示する場所（非表示で準備） -->
         <p id="error-message" class="error" style="display: none;"></p>
-
+        <!-- 新規スレッド作成フォーム -->
         <form id="newThreadForm">
-            <div class="form-group">
-                <label for="title">スレッドタイトル</label>
-                <input type="text" id="title" name="title" required>
+            <div class="form-header">
+                <div class="username-box">
+                    <?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>
+                </div>
+                <input type="text" id="title" name="title" class="title-input" placeholder="スレッドタイトル" required>
             </div>
-            
-            <div class="form-group">
-                <label for="body">投稿内容</label>
-                <textarea id="body" name="body" rows="5" required></textarea>
-            </div>
-
-            <div class="form-group">
-                <label>投稿者名</label>
-                <input type="text" value="<?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>" readonly>
-            </div>
-
+            <textarea id="body" name="body" class="body-input" placeholder="投稿内容" required></textarea>
+            <!-- CSRFトークン（セキュリティ対策用） -->
             <input type="hidden" name="token" value="<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
-
-            <button type="submit" id="submitBtn" class="btn btn-primary">作成する</button>
+            <div class="button-group">
+                <a href="thread_list.php" class="btn btn-back">一覧に戻る</a>
+                <button type="submit" id="submitBtn" class="btn">作成する</button>
+            </div>
         </form>
-
-        <p style="margin-top: 1.5em;"><a href="thread_list.php">一覧に戻る</a></p>
     </div>
 
     <script>

@@ -1,0 +1,108 @@
+/* =========================================
+   新規スレッド作成画面 (new_thread.php)
+   ========================================= */
+
+/* --- ページ全体の基本設定 --- */
+body {
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background-color: #fff; /* 背景は白 */
+    color: #222; /* 濃い文字色 */
+    margin: 0;
+    padding: 0;
+}
+
+/* --- コンテナ中央寄せ --- */
+.container {
+    width: 90%;
+    max-width: 800px; /* 全体幅 */
+    margin: 60px auto;
+    text-align: center;
+}
+
+/* --- ページタイトル --- */
+h1 {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 35px;
+}
+
+/* --- フォーム全体の枠 --- */
+form {
+    border: 1.5px solid #333; /* 枠線を明確に */
+    border-radius: 4px;       /* 角を少し丸く */
+    padding: 25px 30px;
+    text-align: left;         /* 入力欄は左寄せ */
+    background: #fff;
+}
+
+/* --- 投稿者名とタイトルを横並びに --- */
+.form-header {
+    display: flex;            /* 横並びに配置 */
+    align-items: center;      /* 高さを中央揃え */
+    margin-bottom: 15px;      /* 下の本文欄との余白 */
+}
+
+/* --- 投稿者名ボックス --- */
+.username-box {
+    font-weight: bold;        /* 太字で強調 */
+    border: 1px solid #333;
+    background: #ffffff;      /* 薄いグレー背景 */
+    padding: 8px 12px;
+    border-radius: 4px;
+    min-width: 80px;         /* 固定幅 */
+    text-align: center;
+    margin-right: 8px;        /* タイトル欄との間隔 */
+}
+
+/* --- スレッドタイトル入力欄 --- */
+.title-input {
+    flex: 1;                  /* 残り幅いっぱいに伸ばす */
+    padding: 8px 10px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* --- 投稿内容欄 --- */
+.body-input {
+    width: 100%;
+    height: 150px;            /* 設計図に合わせてやや低め */
+    padding: 8px 10px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 14px;
+    resize: vertical;         /* 高さ調整 */
+    box-sizing: border-box;
+    margin-bottom: 20px;      /* 下のボタンとの余白 */
+}
+
+/* --- ボタンエリア（中央寄せで横並び） --- */
+.button-group {
+    display: flex;
+    justify-content: center;  /* 中央揃え */
+    gap: 40px;                /* ボタン間を広めに */
+    margin-top: 10px;
+}
+
+/* --- 共通ボタン --- */
+.btn {
+    padding: 8px 24px;
+    font-size: 16px;
+    border: 1.5px solid #333;
+    border-radius: 4px;
+    background: #fff;
+    color: #000;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+
+/* --- エラーメッセージ --- */
+.error {
+    color: #b00020;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 10px;
+}

@@ -8,7 +8,7 @@ require_login();
 <head>
     <meta charset="UTF-8">
     <title>プロフィール一覧</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_profiles.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* プロフィール表示用の簡易スタイル */

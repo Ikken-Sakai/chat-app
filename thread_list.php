@@ -387,7 +387,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     repliesContainer.innerHTML = '<p>この投稿にはまだ返信がありません。</p>';
                     return;
                 }
-                const MAX_VISIBLE = 2;
+                const MAX_VISIBLE = 2; //3件以上は省略
                 const visibleReplies = replies.length > MAX_VISIBLE
                     ? replies.slice(-MAX_VISIBLE)
                     : replies;
@@ -400,7 +400,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 // 3件より多い場合は「全件表示」ボタンを上に追加
                 if (replies.length > MAX_VISIBLE) {
 
-                    // --- 返信が多い場合のみ「全件表示」ボタンを追加 ---
+                    // --- 返信が多い場合のみ「全件〇表示」ボタンを追加 ---
                     const showAllBtn = document.createElement('button');
                     showAllBtn.textContent = `全${replies.length}件の返信をすべて表示`;
                     showAllBtn.className = 'show-all-btn';

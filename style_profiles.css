@@ -1,0 +1,147 @@
+/* =========================================
+   プロフィール一覧画面（profile_list.php）専用スタイル
+   ========================================= */
+
+/* ===============================
+   【ページ全体の構成】
+   =============================== */
+
+/* メインタイトル */
+h1 {
+    text-align: center;              /* 中央揃え */
+    font-size: 42px;                 /* 大きめの文字 */
+    margin-bottom: 20px;             /* 下に余白 */
+}
+
+/* 画面全体のコンテナ */
+.container {
+    width: 90%;                      /* 幅90%に設定（中央寄せ） */
+    max-width: 1000px;               /* 最大幅を1000pxに制限 */
+    margin: 40px auto;               /* 上下40pxの余白で中央配置 */
+}
+
+/* ===============================
+   【ナビゲーションエリア】
+   =============================== */
+.nav-links {
+    display: flex;                   /* 横並びに配置 */
+    justify-content: center;         /* 全体を中央揃え */
+    align-items: center;
+    gap: 10px;                       /* ボタン間の間隔 */
+    flex-wrap: wrap;                 /* 小画面時に折り返し */
+    border-bottom: 2px solid #ccc;   /* 下に区切り線 */
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+
+.nav-links p {
+    margin: 0 10px 0 0;
+    font-weight: bold;
+}
+
+.nav-links .btn {
+    padding: 6px 14px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #f8f8f8;
+    cursor: pointer;
+    text-decoration: none;
+    color: #222;
+    font-size: 14px;
+}
+
+/* ===============================
+   【並び替えボタン】
+   =============================== */
+.sort-controls {
+    text-align: center;              /* 中央寄せ配置 */
+    margin-bottom: 20px;
+}
+
+.sort-btn {
+    padding: 6px 10px;
+    margin: 0 5px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #f5f5f5;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* ===============================
+   【プロフィールカード】
+   =============================== */
+.profile-item {
+    border: 1px solid #ccc;          /* 枠線 */
+    border-radius: 6px;              /* 角を丸く */
+    padding: 15px;                   /* 内側の余白 */
+    margin-bottom: 20px;             /* 下に間隔 */
+    background: #f9f9f9;             /* 背景を薄いグレーに */
+    position: relative;              /* 編集ボタン位置指定の基準にする */
+}
+
+
+.profile-item h3 {
+    margin: 0 0 10px 0;              /* 下に少し余白 */
+    font-size: 18px;
+}
+
+.profile-item p {
+    margin: 5px 0;
+    line-height: 1.5;                /* 読みやすい行間 */
+}
+
+.profile-item small {
+    color: #666;
+}
+
+/* 編集ボタン（右上に固定） */
+.edit-link {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 14px;
+    padding: 4px 8px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #f5f5f5;
+    text-decoration: none;
+    color: #222;
+}
+
+.edit-link:hover {
+    background: #e0e0e0;
+}
+
+/* ===============================
+   【ページネーション】
+   =============================== */
+.pagination {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.pagination a,
+.pagination strong {
+    display: inline-block;
+    padding: 6px 10px;
+    margin: 0 3px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #222;
+}
+
+.pagination strong {
+    background: #e0e0e0;             /* 現在ページをグレーで強調 */
+}
+
+/* ===============================
+   【エラーメッセージなど】
+   =============================== */
+.error {
+    color: #b00020;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+}

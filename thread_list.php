@@ -182,7 +182,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 <div class="thread-header">
                     <div class="thread-header-left">
                     <span class="thread-meta">投稿者: ${escapeHTML(thread.username)}</span>
-                    <span class="thread-title">${escapeHTML(thread.title)}</span>
                     </div>
                     <div class="thread-header-right">
                     <span class="thread-date">${thread.created_at}</span>
@@ -191,6 +190,9 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         : ''}
                     </div>
                 </div>
+
+                <hr class="title-divider"> 
+                <div class="thread-title-line">${escapeHTML(thread.title)}</div>
 
                 <div class="thread-body">
                     <p>${escapeHTML(thread.body)}</p>

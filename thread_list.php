@@ -406,10 +406,10 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     repliesContainer.appendChild(createReplyElement(reply));
                 });
 
-                // 「全件表示」ボタン生成（forceOpen=true のときは完全にスキップ）
+                // 「すべての返信を表示」ボタン（件数非表示）
                 if (!forceOpen && replies.length > MAX_VISIBLE) {
                     const showAllBtn = document.createElement('button');
-                    showAllBtn.textContent = `全${replies.length}件の返信をすべて表示`;
+                    showAllBtn.textContent = 'すべての返信を表示';
                     showAllBtn.className = 'show-all-btn';
 
                     showAllBtn.addEventListener('click', async () => {
@@ -418,26 +418,22 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                             const newData = await newResponse.json();
                             const latestReplies = newData.replies || newData;
 
-                            // 一旦全消しして全件再描画
                             repliesContainer.innerHTML = '';
                             latestReplies.forEach(reply => {
                                 repliesContainer.appendChild(createReplyElement(reply));
                             });
 
+                            // ボタン削除（2重押下防止）
+                            showAllBtn.remove();
+
                         } catch (error) {
                             repliesContainer.innerHTML = `<p class="error">再読み込みに失敗しました: ${error.message}</p>`;
                         }
-
-                        //ボタンを確実に削除（2重防止）
-                        showAllBtn.remove();
                     });
 
                     repliesContainer.prepend(showAllBtn);
-                } else {
-                    // forceOpenのときは全件ボタンを完全削除
-                    const existingBtn = repliesContainer.querySelector('.show-all-btn');
-                    if (forceOpen && existingBtn) existingBtn.remove();
                 }
+
                 // 返信表示中にボタンのテキストを変更
                 button.textContent = '返信を隠す';
 
@@ -615,15 +611,19 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 if (isReply) {  
                     const parentThreadItem = buttonElement.closest('.thread-item');   // 削除された返信の親スレッド要素を取得  
                     if (!parentThreadItem) return; // ←親スレッドが見つからない場合は処理中断  
+
                     const replyCountButton = parentThreadItem.querySelector('.show-replies-btn'); // 「返信○件」ボタンを取得  
                     if (!replyCountButton) return; // ←ボタンが存在しない場合は処理中断 
+
                     const currentCount = parseInt(replyCountButton.dataset.replyCount || '0', 10); // 現在の返信数を数値として取得（なければ0）  
                     const newCount = Math.max(currentCount - 1, 0);  // 返信を1減らし、0未満にならないように調整  
+
                     replyCountButton.dataset.replyCount = newCount;  // 新しい返信数をデータ属性に反映  
 
                     // ここで強制的に再描画（表示状態も維持）
                     const parentId = replyCountButton.dataset.threadId;
                     const repliesContainer = parentThreadItem.querySelector('.replies-container');
+
                     if (parentId && repliesContainer) {
                         repliesContainer.style.display = 'block'; // 非表示にならないように強制表示
                         repliesContainer.innerHTML = '<p>更新中...</p>'; // ローディング表示

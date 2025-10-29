@@ -362,13 +362,37 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             const repliesContainer = document.getElementById(`replies-for-${parentPostId}`);
             const button = document.querySelector(`[data-thread-id='${parentPostId}']`);
 
-            // forceOpen=false のときだけトグル処理を行う
+            // forceOpen=false のときだけトグル処理を行う（開閉切り替え）
             if (!forceOpen && repliesContainer.style.display === 'block') {
+                // 閉じる前に最新の返信数を取得してボタンの件数を更新
+                try {
+                    const countRes = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, {
+                        cache: "no-store" // キャッシュを無効化して最新データを取得
+                    });
+                    if (countRes.ok) {
+                        const countData = await countRes.json();
+                        const replies = countData.replies || countData; // データ形式に対応
+                        const replyCount = countData.count || replies.length; // 件数を取得
+
+                        // 最新の件数をボタンに反映
+                        button.dataset.replyCount = replyCount;
+                        button.textContent = `返信${replyCount}件`;
+                    } else {
+                        // 通信エラー時は古い件数をそのまま使う
+                        const replyCount = button.dataset.replyCount;
+                        button.textContent = `返信${replyCount}件`;
+                    }
+                } catch {
+                    // 通信例外が発生した場合も古い件数をそのまま表示
+                    const replyCount = button.dataset.replyCount;
+                    button.textContent = `返信${replyCount}件`;
+                }
+
+                // 返信一覧を非表示にして終了
                 repliesContainer.style.display = 'none';
-                const replyCount = button.dataset.replyCount;
-                button.textContent = `返信${replyCount}件`;
                 return;
             }
+
 
             repliesContainer.innerHTML = '<p>返信を読み込み中...</p>';
             repliesContainer.style.display = 'block';
@@ -460,7 +484,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 <button class="btn btn-sm btn-danger delete-btn reply-delete-btn" data-post-id="${reply.id}">🗑️</button>
             ` : '';
 
-            //wscapeHTMLを通してXSS攻撃対策
+            //escapeHTMLを通してXSS攻撃対策
             replyElement.innerHTML = `
                 <p>${escapeHTML(reply.body)}</p>
                 <div class="reply-meta">

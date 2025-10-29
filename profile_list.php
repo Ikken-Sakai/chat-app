@@ -29,17 +29,18 @@ require_login();
             <p><?= htmlspecialchars($_SESSION['user']['username'], ENT_QUOTES, 'UTF-8') ?>さんとしてログイン中</p>
             <a href="logout.php" class="btn btn-secondary">ログアウト</a>
             <a href="thread_list.php" class="btn btn-secondary">スレッド一覧へ</a>
-            <button id="refreshBtn" class="btn btn-secondary">↻</button> 
+            <button id="refreshBtn" class="btn btn-secondary">↻</button>
+
+            <div class="sort-controls-inline">
+                <select id="sortSelect" class="sort-select">
+                    <option value="username_asc">氏名順（昇順）</option>
+                    <option value="username_desc">氏名順（降順）</option>
+                    <option value="newest_desc">新着順</option>
+                </select>
+            </div>
         </div>
 
         <p id="loading-message" aria-live="polite"></p>
-
-        <div class="sort-controls" style="margin-bottom: 15px;">
-            並び替え:
-            <button class="sort-btn" data-sort="username" data-order="asc">氏名順 (昇順)</button>
-            <button class="sort-btn" data-sort="username" data-order="desc">氏名順 (降順)</button>
-            <button class="sort-btn" data-sort="newest" data-order="desc">新着順</button>
-            </div>
 
         <div id="profile-list"></div>
 
@@ -175,44 +176,31 @@ require_login();
                 $profileList.appendChild(profileElement);
             });
             
-            // すべて表示し終わったら、ソーティングボタンを有効化する
-            setupSortButtons(); 
         }
 
         /**
          * ページ上のソートボタンにクリックされたときの動作を教える関数
          */
-        function setupSortButtons() {
-            document.querySelectorAll('.sort-btn').forEach(button => { // ページ内にある全てのソートボタン (.sort-btn) を見つける
-                // ボタンが重複して反応しないように、クローンボタン、処理初期化
-                const newButton = button.cloneNode(true);
-                if (button.parentNode) button.parentNode.replaceChild(newButton, button);
-                
-                newButton.removeEventListener('click', handleSortClick); //ボタンから古い命令 (EventListener) を削除
-                newButton.addEventListener('click', handleSortClick);    //ボタンに新しい命令 (EventListener) を登録 -> クリックされたら handleSortClick を呼ぶ
+        function setupSortSelect() {
+            const sortSelect = document.getElementById('sortSelect');
+            if (!sortSelect) return;
+
+            // selectの選択変更時に呼ばれる
+            sortSelect.addEventListener('change', () => {
+                const selectedValue = sortSelect.value.trim(); // 例: "username_asc"
+                const parts = selectedValue.split('_');
+
+                // username_asc → ["username", "asc"]
+                const sortBy = parts.slice(0, -1).join('_');  // "username"
+                const orderBy = parts.slice(-1)[0];           // "asc"
+
+                // ソート条件を更新
+                currentSort = sortBy;
+                currentOrder = orderBy;
+                currentPage = 1;
+
+                fetchAndDisplayProfiles(); // 再取得
             });
-        }
-        
-        /**
-         * ソートボタンがクリックされたときに実行される関数
-         */
-        function handleSortClick(event) {
-            const button = event.currentTarget; //どのボタンが押されたかを取得
-            //ボタンに設定されている並び替え条件 (data-sort, data-order) を取得
-            const sortBy = button.dataset.sort;
-            const orderBy = button.dataset.order;
-            
-            // もし今と同じ条件のボタンなら、何もしないで終了
-            if (sortBy === currentSort && orderBy === currentOrder) return; 
-            
-            // 新しい並び替え条件を記憶する
-            currentSort = sortBy;
-            currentOrder = orderBy;
-            //並び替えたら必ず1ページ目に戻す
-            currentPage = 1; 
-            
-            // fetchAndDisplayProfilesを呼び出して、新しい条件で一覧を再取得・表示させる
-            fetchAndDisplayProfiles(); 
         }
 
         /**
@@ -296,7 +284,11 @@ require_login();
         // 最初の実行
         // ブラウザがページのHTMLを全部読み終わったら (DOMContentLoaded)
         // 最初にfetchAndDisplayProfilesを呼んで、プロフィール一覧を表示させる
-        document.addEventListener('DOMContentLoaded', fetchAndDisplayProfiles); 
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndDisplayProfiles();
+            setupSortSelect();
+        });
+
     </script>
 </body>
 </html>

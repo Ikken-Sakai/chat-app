@@ -6,7 +6,7 @@ require_login();
 // 趣味の選択肢
 $hobby_options = [
     '読書', 'ゲーム', '音楽', 'スポーツ', '旅行', 
-    '料理', 'カラオケ', 'ドライブ', '映画鑑賞', 'その他' 
+    '料理', 'カラオケ', 'ドライブ', '映画鑑賞'
 ];
 ?>
 <!DOCTYPE html>
@@ -14,7 +14,7 @@ $hobby_options = [
 <head>
     <meta charset="UTF-8">
     <title>プロフィールの編集</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style_edit_profile.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         /* チェックボックス用のスタイル */
@@ -32,25 +32,37 @@ $hobby_options = [
         <form id="profileEditForm" style="display: none;">
             
             <div class="form-group">
-                <label>ユーザー名 (変更できません)</label>
+                <label>ユーザー名</label>
                 <input type="text" id="username" name="username" readonly>
+                <p class="note">※変更できません</p>
             </div>
 
             <div class="form-group">
                 <label for="department">部署</label>
-                <input type="text" id="department" name="department" maxlength="100"> 
+                <select id="department" name="department">
+                    <option value="">選択してください</option>
+                    <option value="総務部">総務部</option>
+                    <option value="人事部">人事部</option>
+                    <option value="営業部">営業部</option>
+                    <option value="開発部">開発部</option>
+                    <option value="広報部">広報部</option>
+                    <option value="経理部">経理部</option>
+                    <option value="企画部">企画部</option>
+                    <option value="その他">その他</option>
+                </select>
             </div>
 
             <div class="form-group">
-                <label>趣味 (複数選択可)</label>
+                <label>趣味</label>
                 <div class="hobby-options">
                     <?php foreach ($hobby_options as $hobby): ?>
                         <label>
                             <input type="checkbox" name="hobbies[]" value="<?= htmlspecialchars($hobby, ENT_QUOTES, 'UTF-8') ?>">
-                            <?= htmlspecialchars($hobby, ENT_QUOTES, 'UTF-8') ?>
+                            <span><?= htmlspecialchars($hobby, ENT_QUOTES, 'UTF-8') ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
+                <p class="note">※複数選択可</p>
             </div>
 
             <div class="form-group">
@@ -58,8 +70,10 @@ $hobby_options = [
                 <textarea id="comment" name="comment" rows="4" maxlength="255"></textarea>
             </div>
 
-            <button type="submit" id="submitBtn" class="btn btn-primary">編集</button>
-            <a href="profile_list.php" class="btn btn-secondary" style="margin-top: 10px;">プロフィール一覧に戻る</a>
+            <div class="btn-area">
+                <a href="profile_list.php" class="btn btn-secondary">プロフィール一覧に戻る</a>
+                <button type="submit" id="submitBtn" class="btn btn-primary">更新</button>
+            </div>
         </form>
     </div>
 

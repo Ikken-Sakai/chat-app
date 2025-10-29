@@ -1,0 +1,148 @@
+/* =========================================
+   プロフィール編集画面用CSS
+   ========================================= */
+
+/* --- ページ全体の基本設定 --- */
+body {
+    font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+    background-color: #ffffff;
+    color: #222;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- コンテナ全体（中央寄せ） --- */
+.container {
+    width: 90%;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    border: 1.5px solid #ccc;
+    border-radius: 10px;
+    background: #fff;
+}
+
+/* --- タイトル（中央上部・強調） --- */
+h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 30px;
+}
+
+/* --- 各フォームグループ --- */
+.form-group {
+    display: grid;
+    grid-template-columns: 150px 1fr;  /* 左：ラベル＋注釈, 右：入力欄 */
+    align-items: center;
+    column-gap: 15px;                  /* 左右の間隔 */
+    margin-bottom: 25px;
+}
+
+/* --- ラベル（左側） --- */
+.form-group label {
+    font-weight: bold;
+    text-align: right;
+    margin-bottom: 2px;
+}
+
+/* --- テキスト・セレクト入力欄共通 --- */
+/* --- 入力欄（右列） --- */
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    font-size: 15px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background-color: #fafafa;
+    box-sizing: border-box;
+}
+
+/* --- 趣味チェックボックスエリア --- */
+.hobby-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 15px;               /* 各ボタン間の余白 */
+}
+
+/* --- 各趣味ボタンの外観 --- */
+.hobby-options label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 18px;
+    border: 1.5px solid #aaa;
+    border-radius: 6px;
+    background-color: #f7f7f7;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+/* --- チェックされたときの見た目 --- */
+.hobby-options input[type="checkbox"]:checked + span {
+    background-color: #8b8b8b;  /* お好みの色 */
+    color: #ffffff;
+    display: inline-block;
+}
+
+/* --- チェックボックス非表示 --- */
+.hobby-options input[type="checkbox"] {
+    display: none;
+}
+
+/* --- チェックボックスの代わりにspanで表示 --- */
+.hobby-options label span {
+    display: inline-block;
+}
+
+.note {
+    grid-column: 1 / 2;           /* ← 左列に配置 */
+    grid-row: 2;                  /* ラベルの下段に */
+    text-align: right;            /* 右寄せ（ラベル位置に合わせる） */
+    color: #d9534f;
+    font-size: 13px;
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+/* --- コメント欄（横並び） --- */
+#comment {
+    resize: vertical;               /* 高さ調整可能 */
+    height: 80px;
+}
+
+/* --- ボタンエリア --- */
+.btn-area {
+    display: flex;
+    justify-content: center;        /* 中央寄せ配置 */
+    gap: 60px;                      /* 戻ると更新の間隔 */
+    margin-top: 30px;
+}
+
+/* --- ボタン共通デザイン --- */
+.btn {
+    display: inline-block;
+    padding: 10px 26px;
+    font-size: 16px;
+    border: 1.5px solid #333;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none;
+    color: #000;
+    transition: all 0.2s ease;
+}
+
+/* --- ホバー時の色変化 --- */
+.btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* --- エラーメッセージ --- */
+.error {
+    color: #b00020;
+    text-align: center;
+}

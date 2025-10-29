@@ -21,8 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // バリデーション
     if ($username === '' || $password === '' || $password_confirm === '') {
         $error = 'すべての項目を入力してください。';
+    } elseif (mb_strlen($username) < 5) {
+        $error = 'ユーザー名は5文字以上で入力してください。';
     } elseif (mb_strlen($username) > 50) {
         $error = 'ユーザー名は50文字以内で入力してください。';
+    } elseif (mb_strlen($password) < 5) {
+        $error = 'パスワードは5文字以上で入力してください。';
     } elseif ($password !== $password_confirm) {
         $error = 'パスワードが一致しません。';
     } else {

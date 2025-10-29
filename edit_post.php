@@ -118,7 +118,7 @@ require_login();
                 }
 
                 //成功したら、メッセージを表示して一覧ページに戻る
-                alert('投稿を更新しました。');
+                //alert('投稿を更新しました。');
                 window.location.href = 'thread_list.php';
 
             } catch (error) {

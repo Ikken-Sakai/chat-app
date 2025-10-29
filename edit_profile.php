@@ -192,7 +192,7 @@ $hobby_options = [
                 }
 
                 //成功した場合
-                alert('プロフィールを更新しました。'); // ポップアップでメッセージ表示
+                //alert('プロフィールを更新しました。'); // ポップアップでメッセージ表示
                 window.location.href = 'profile_list.php'; // プロフィール一覧ページに戻る
 
             } catch (error) {

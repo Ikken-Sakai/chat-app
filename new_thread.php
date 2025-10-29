@@ -95,7 +95,7 @@ $token = $_SESSION['form_token'];
             }
 
             // 成功した場合
-            alert('新しいスレッドが作成されました。');
+            //alert('新しいスレッドが作成されました。');
             window.location.href = 'thread_list.php'; // 一覧ページに遷移
 
         } catch (error) {

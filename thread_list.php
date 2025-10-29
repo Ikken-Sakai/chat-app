@@ -395,54 +395,48 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     return;
                 }
                 const MAX_VISIBLE = 2; //3件以上は省略
-                const visibleReplies = replies.length > MAX_VISIBLE
-                    ? replies.slice(-MAX_VISIBLE)
-                    : replies;
+                // forceOpen（true=全件表示）なら全件、falseなら最新2件だけ
+                const visibleReplies = (forceOpen || replies.length <= MAX_VISIBLE)
+                    ? replies
+                    : replies.slice(-MAX_VISIBLE);
+
 
                 // 返信の描画
                 visibleReplies.forEach(reply => {
                     repliesContainer.appendChild(createReplyElement(reply));
                 });
 
-                // 3件より多い場合は「全件表示」ボタンを上に追加
-                if (replies.length > MAX_VISIBLE) {
-
-                    // --- 返信が多い場合のみ「全件〇表示」ボタンを追加 ---
+                // 「全件表示」ボタン生成（forceOpen=true のときは完全にスキップ）
+                if (!forceOpen && replies.length > MAX_VISIBLE) {
                     const showAllBtn = document.createElement('button');
                     showAllBtn.textContent = `全${replies.length}件の返信をすべて表示`;
                     showAllBtn.className = 'show-all-btn';
 
-                    // 「全件表示」ボタンが押されたときの処理
                     showAllBtn.addEventListener('click', async () => {
                         try {
-                            // 最新の返信データを再取得（キャッシュを避けるため現在時刻をパラメータに付与）
                             const newResponse = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, { cache: "no-store" });
-                            // APIが { count, replies } を返すため、柔軟に取り出す
                             const newData = await newResponse.json();
-                            const latestReplies = newData.replies || newData; 
-                            const latestCount = newData.count || latestReplies.length; //件数も取得（後でUI更新用）
+                            const latestReplies = newData.replies || newData;
 
-
-                            // 古い返信を一旦消してから、新しい返信をすべて表示
+                            // 一旦全消しして全件再描画
                             repliesContainer.innerHTML = '';
                             latestReplies.forEach(reply => {
-                                repliesContainer.appendChild(createReplyElement(reply)); // 返信を1件ずつ表示
+                                repliesContainer.appendChild(createReplyElement(reply));
                             });
 
-                            //「全〇件の返信をすべて表示」ボタンのテキストも最新化
-                            showAllBtn.textContent = `全${latestCount}件の返信をすべて表示`;
-
                         } catch (error) {
-                            // 通信エラー時はメッセージを表示
                             repliesContainer.innerHTML = `<p class="error">再読み込みに失敗しました: ${error.message}</p>`;
                         }
 
-                        // ボタンは一度押したら消す（2重押下防止）
+                        //ボタンを確実に削除（2重防止）
                         showAllBtn.remove();
                     });
 
-                    // 返信リストの一番上にボタンを追加
                     repliesContainer.prepend(showAllBtn);
+                } else {
+                    // forceOpenのときは全件ボタンを完全削除
+                    const existingBtn = repliesContainer.querySelector('.show-all-btn');
+                    if (forceOpen && existingBtn) existingBtn.remove();
                 }
                 // 返信表示中にボタンのテキストを変更
                 button.textContent = '返信を隠す';
@@ -554,9 +548,6 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
                 // (4) 件数ボタンのカウントを更新
                 const replyCountButton = document.querySelector(`button[data-thread-id='${parentId}']`);
-                const currentCount = parseInt(replyCountButton.dataset.replyCount) || 0;
-                const newCount = currentCount + 1;
-                replyCountButton.dataset.replyCount = newCount;
                 replyCountButton.textContent = '返信を隠す'; // 常に開いた状態で表示
 
                 // (5) 入力欄をリセット
@@ -637,6 +628,10 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         repliesContainer.style.display = 'block'; // 非表示にならないように強制表示
                         repliesContainer.innerHTML = '<p>更新中...</p>'; // ローディング表示
                         await fetchAndDisplayReplies(parentId, true); // 最新状態に再描画
+
+                        // 削除後に「全件表示ボタン」が残っていたら確実に削除
+                        const allBtn = repliesContainer.querySelector('.show-all-btn');
+                        if (allBtn) allBtn.remove();
                     }
 
                     // 返信が0件なら「まだ返信がありません」を表示

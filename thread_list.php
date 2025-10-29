@@ -61,12 +61,16 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             <a href="new_thread.php" class="btn btn-primary">新規投稿</a>
             <a href="profile_list.php" class="btn btn-secondary">プロフィール一覧へ</a>
             <button id="refreshBtn" class="btn btn-secondary">↻</button>
+
+            <div class="sort-controls-inline">
+                <select id="sortSelect" class="sort-select">
+                    <option value="created_at_desc">新しい順</option>
+                    <option value="created_at_asc">古い順</option>
+                    <option value="updated_at_desc">更新順</option>
+                </select>
+            </div>
         </div>
-        <div class="sort-controls">
-            <button class="sort-btn" data-sort="created_at" data-order="desc">新しい順</button>
-            <button class="sort-btn" data-sort="created_at" data-order="asc">古い順</button>
-            <button class="sort-btn" data-sort="updated_at" data-order="desc">更新順</button>
-        </div>
+
         
         <p id="loading-message" aria-live="polite"></p>
 
@@ -234,32 +238,33 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         }
 
         //============================================================
-        // ソートボタン設定
+        // ソートセレクト設定
         //============================================================
-        /**
-         * ページ上のソートボタンにクリックイベントを設定する関数
-         */
         function setupSortButtons() {
-            document.querySelectorAll('.sort-btn').forEach(button => {
-                // 既存のリスナーを削除（念のため）
-                const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
+            const sortSelect = document.getElementById('sortSelect');
+            if (!sortSelect) return;
 
-                newButton.addEventListener('click', () => {
-                    const sortBy = newButton.dataset.sort;
-                    const orderBy = newButton.dataset.order;
+            sortSelect.addEventListener('change', () => {
+                const selectedValue = sortSelect.value.trim(); // "created_at_desc" など
+                const parts = selectedValue.split('_');
 
-                    // 現在のソート条件と同じボタンが押されたら何もしない
-                    if (sortBy === currentSort && orderBy === currentOrder) return; 
+                // created_at_asc → ["created", "at", "asc"]
+                const orderBy = parts.pop();              // 最後の要素（asc/desc）
+                const sortBy = parts.join('_');           // 残りを結合 → "created_at"
 
-                    console.log(`ソート変更: ${sortBy} ${orderBy}`);
-                    currentSort = sortBy;
-                    currentOrder = orderBy;
-                    currentPage = 1; // ソート順を変えたら1ページ目に戻す
-                    fetchAndDisplayThreads(); // 再読み込み
-                });
+                currentSort = sortBy;
+                currentOrder = orderBy;
+                currentPage = 1;
+
+                //console.log(`選択値: ${selectedValue}`);
+                //console.log(`sort=${currentSort}, order=${currentOrder}`);
+                //console.log(`送信URL: ${API_ENDPOINT}?sort=${currentSort}&order=${currentOrder}&page=${currentPage}`);
+
+                fetchAndDisplayThreads(); // 再読み込み
             });
         }
+
+
 
         //============================================================
         // ページネーション作成

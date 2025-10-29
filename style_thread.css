@@ -290,6 +290,33 @@ h1 {
 }
 
 /* =========================================
+   【ソート選択メニュー】
+   ========================================= */
+.sort-controls {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.sort-controls label {
+    font-weight: bold;
+    margin-right: 6px;
+}
+
+.sort-select {
+    padding: 6px 10px;
+    border: 1px solid #666;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.sort-select:hover {
+    background: #f5f5f5;
+}
+
+
+/* =========================================
    【エラーメッセージ】
    ========================================= */
 .error {

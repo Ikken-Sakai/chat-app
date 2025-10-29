@@ -58,7 +58,7 @@ form {
 .username-box {
     font-weight: bold;           /* 太字で強調 */
     border: 1px solid #333;      /* 枠線 */
-    background: #fff;            /* 背景白 */
+    background-color: #f0f0f0;   /* 背景グレー（編集不可感） */
     padding: 8px 12px;           /* 内側余白 */
     border-radius: 4px;          /* 角を丸く */
     min-width: 80px;             /* 最小幅 */

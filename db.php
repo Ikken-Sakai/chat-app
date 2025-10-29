@@ -19,9 +19,14 @@ $db_pass  = '';        // MySQLパスワード（XAMPPは空欄がデフォル�
 // try-catchで例外処理を行うことで、安全に接続を確認。
 try {
     $pdo = new PDO($dsn, $db_user, $db_pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // エラー時に例外を投げる（開発時に有用）
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // 取得結果を連想配列として扱う
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,  // エラー時に例外を投げる（開発時に有用）
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,        // 取得結果を連想配列として扱う
+        PDO::ATTR_EMULATE_PREPARES   => false,                   // プリペアドステートメントのエミュレーションを無効化
+        PDO::ATTR_STRINGIFY_FETCHES  => false,                   // 数値を文字列に変換しない（型を保持）
     ]);
+    
+    // MySQLのタイムゾーンをJST（Asia/Tokyo）に設定
+    $pdo->exec("SET time_zone = '+09:00'");
 } catch (PDOException $e) {
     //-----------------------------
     // 接続失敗時の処理

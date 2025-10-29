@@ -1,325 +1,289 @@
-/* =========================================
-   スレッド一覧画面（thread_list.php）用スタイル
-   ========================================= */
+/* =========================================================
+   スレッド一覧画面用スタイル
+   ========================================================= */
 
-/* =========================================
-   【ページ全体の基本設定】
-   ========================================= */
+/* ------------------------------
+   ページ全体
+   ------------------------------ */
 body {
     font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-    background-color: #fff;
-    color: #222;
-    margin: 0;
-    padding: 0;
+    background-color: #ffffff;   /* ページ背景色（白） */
+    color: #222;                 /* 標準文字色（やや濃いグレー） */
+    margin: 0;                   /* ページ外余白をなしに */
+    padding: 0;                  /* ページ内余白をなしに */
 }
 
-/* =========================================
-   【全体のコンテナ】
-   ========================================= */
+/* ------------------------------
+   コンテナ（全体中央寄せ）
+   ------------------------------ */
 .container {
-    width: 90%;
-    max-width: 1000px;
-    margin: 40px auto;
+    width: 90%;                  /* 横幅を全体の90%に制限 */
+    max-width: 1000px;           /* 最大幅を1000pxに制限 */
+    margin: 40px auto;           /* 上下40px、左右中央寄せ配置 */
 }
 
-/* =========================================
-   【ページタイトル】
-   ========================================= */
+/* ------------------------------
+   ページタイトル
+   ------------------------------ */
 h1 {
-    text-align: center;
-    font-size: 42px;
-    margin-bottom: 20px;
+    text-align: center;          /* 中央寄せ配置 */
+    font-size: 38px;             /* 大きめの文字サイズ */
+    margin-bottom: 25px;         /* 下に余白 */
 }
 
-/* =========================================
-   【ナビゲーションエリア】
-   ========================================= */
+/* ------------------------------
+   ナビゲーションエリア
+   ------------------------------ */
 .nav-links {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    border-bottom: 2px solid #ccc;
-    padding-bottom: 10px;
-    margin-bottom: 25px;
+    display: flex;               /* フレックスボックス(自動整列)配置 */
+    flex-wrap: wrap;             /* 折り返し可 */
+    justify-content: center;     /* 中央寄せ配置 */
+    align-items: center;         /* 垂直方向中央揃え */
+    gap: 10px;                   /* 要素間の間隔 */
+    padding-bottom: 10px;        /* 下側の余白 */
+    margin-bottom: 25px;         /* 下に余白 */
+    border-bottom: 2px solid #ccc; /* 下線で区切る */
 }
 
 .nav-links p {
-    margin: 0 10px 0 0;
-    font-weight: bold;
+    margin: 0;                   /* 余白を削除 */
+    font-weight: bold;           /* 太字 */
 }
 
-.nav-links .btn {
-    padding: 6px 14px;
-    border: 1px solid #333;
-    border-radius: 4px;
-    background: #f8f8f8;
-    cursor: pointer;
-    text-decoration: none;
-    color: #222;
-    font-size: 14px;
+/* 共通ボタン */
+.btn {
+    padding: 6px 14px;           /* 内側余白 */
+    border: 1px solid #555;      /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    background: #f5f5f5;         /* 背景色（薄いグレー） */
+    color: #222;                 /* 文字色（濃いグレー） */
+    text-decoration: none;       /* 下線を消す */
+    cursor: pointer;             /* ホバー時にカーソル変更 */
+    font-size: 14px;             /* 標準文字サイズ */
 }
 
-.nav-links .btn:hover {
-    background: #e0e0e0;
+.btn:hover {
+    background: #e0e0e0;         /* ホバー時に少し濃いグレー */
 }
 
-/* =========================================
-   【スレッド全体（投稿枠）】
-   ========================================= */
+/* ------------------------------
+   スレッド全体
+   ------------------------------ */
 .thread-item {
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 12px 16px;
-    margin-bottom: 25px;
-    background: #eeeeee;
+    background: #f9f9f9;         /* 背景色（淡いグレー） */
+    border: 1px solid #ccc;      /* 枠線（薄いグレー） */
+    border-radius: 6px;          /* 角を丸く */
+    padding: 14px 16px;          /* 内側余白 */
+    margin-bottom: 25px;         /* 下に間隔 */
 }
 
-/* =========================================
-   【スレッド上部（投稿者・日時）】
-   ========================================= */
+/* ------------------------------
+   スレッド上部（投稿者・日時）
+   ------------------------------ */
 .thread-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
+    display: flex;               /* 横並び配置 */
+    justify-content: space-between; /* 左右に分けて配置 */
+    align-items: center;         /* 縦中央揃え */
+    margin-bottom: 6px;          /* 下に少し余白 */
 }
 
-/* 投稿者名（普通） */
 .thread-meta {
-    font-weight: normal;
+    font-weight: normal;         /* 通常の太さ */
 }
 
-/* 投稿日・編集日時 */
 .thread-date {
-    font-size: 13px;
-    color: #666;
+    font-size: 13px;             /* 小さめ文字 */
+    color: #666;                 /* 薄めのグレー */
 }
 
-/* 編集済みラベル（小さめ・灰色） */
 .edited-label {
-    display: block;
-    font-size: 11px;
-    color: #999;
-    margin-top: 2px;
+    font-size: 11px;             /* さらに小さい文字 */
+    color: #999;                 /* 薄いグレー */
 }
 
-/* =========================================
-   【タイトル（下段＋区切り線）】
-   ========================================= */
-
-/* 区切り線 */
+/* ------------------------------
+   タイトル行
+   ------------------------------ */
 .title-divider {
-    border: none;
-    border-top: 1px solid #ccc;
-    margin: 6px 0;
+    border: none;                /* 枠線を消す */
+    border-top: 1px solid #ccc;  /* 上線のみ表示 */
+    margin: 6px 0;               /* 上下の余白 */
 }
 
-/* タイトル行 */
 .thread-title-line {
-    font-weight: bold;
-    font-size: 18px;
-    background: #fff;
-    border-left: 4px solid #888;
-    padding: 4px 8px;
-    margin-bottom: 8px;
+    font-weight: bold;           /* 太字 */
+    font-size: 18px;             /* 少し大きい文字 */
+    background: #fff;            /* 白背景 */
+    border-left: 4px solid #888; /* 左にラインを追加 */
+    padding: 4px 8px;            /* 内側余白 */
+    margin-bottom: 10px;         /* 下に余白 */
 }
 
-/* =========================================
-   【投稿本文部分】
-   ========================================= */
-.thread-body {
-    font-size: 14px;
-    margin: 10px 0;
-}
-
+/* ------------------------------
+   投稿本文
+   ------------------------------ */
 .thread-body p {
-    margin: 6px 0;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    border: 1px solid #aaa;
-    border-radius: 3px;
-    padding: 8px 10px;
-    background-color: #fff;
+    margin: 8px 0;               /* 上下に少し余白 */
+    line-height: 1.6;            /* 行間を少し広く */
+    background: #fff;            /* 白背景 */
+    border: 1px solid #aaa;      /* 枠線（灰色） */
+    border-radius: 4px;          /* 角を丸く */
+    padding: 8px 10px;           /* 内側余白 */
+    white-space: pre-wrap;       /* 改行とスペースを保持 */
 }
 
-/* =========================================
-   【操作ボタン行（返信・編集・削除）】
-   ========================================= */
+/* ------------------------------
+   操作ボタン行（返信・編集・削除）
+   ------------------------------ */
 .thread-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 8px;
-}
-
-.thread-info-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: flex;               /* 横並び配置 */
+    justify-content: space-between; /* 左右分割配置 */
+    align-items: center;         /* 縦中央揃え */
+    margin-top: 8px;             /* 上に余白 */
 }
 
 .show-replies-btn {
-    padding: 4px 10px;
-    border: 1px solid #666;
-    border-radius: 4px;
-    background: #f5f5f5;
-    cursor: pointer;
+    padding: 4px 10px;           /* 内側余白 */
+    border: 1px solid #666;      /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    background: #f5f5f5;         /* 背景グレー */
+    cursor: pointer;             /* カーソル変更 */
 }
 
 .show-replies-btn:hover {
-    background: #e0e0e0;
+    background: #e0e0e0;         /* ホバー時色変更 */
 }
 
 .action-buttons {
-    display: flex;
-    gap: 6px;
+    display: flex;               /* 横並び */
+    gap: 6px;                    /* 間隔 */
 }
 
-/* =========================================
-   【返信一覧】
-   ========================================= */
+/* ------------------------------
+   返信一覧
+   ------------------------------ */
 .replies-container {
-    margin-top: 8px;
-    border-left: 3px solid #aaa;
-    padding-left: 10px;
-    background: #fafafa;
+    margin-top: 10px;            /* 上に余白 */
+    padding-left: 12px;          /* 左に余白 */
+    border-left: 3px solid #aaa; /* 左線で区切る */
+    background: #fafafa;         /* 背景薄グレー */
 }
 
 .reply-item {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 8px;
-    margin-top: 6px;
-    background: #fff;
+    background: #fff;            /* 白背景 */
+    border: 1px solid #ddd;      /* 枠線薄グレー */
+    border-radius: 4px;          /* 角丸 */
+    padding: 8px;                /* 内側余白 */
+    margin-top: 8px;             /* 上に余白 */
 }
 
-/* 返信メタ情報（名前・日時） */
 .reply-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    margin-top: 6px;
-    font-size: 13px;
-    color: #666;
+    display: flex;               /* 横並び配置 */
+    justify-content: space-between; /* 左右分割配置 */
+    flex-wrap: wrap;             /* 折り返し可 */
+    font-size: 13px;             /* 小さめ文字 */
+    color: #666;                 /* 文字色薄め */
+    margin-top: 6px;             /* 上に少し余白 */
 }
 
-/* 右側（日時とボタン） */
 .reply-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-}
-
-.reply-right-top {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    display: flex;               /* 縦並び配置 */
+    flex-direction: column;      /* 縦方向に積む */
+    align-items: flex-end;       /* 右寄せ配置 */
+    gap: 4px;                    /* 上下の間隔 */
 }
 
 .reply-right-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 6px;
+    display: flex;               /* 横並び配置 */
+    gap: 6px;                    /* ボタン間の間隔 */
 }
 
-/* 編集済み（返信用） */
 .reply-right .edited-label {
-    display: inline;
-    font-size: 11px;
-    color: #999;
-    margin-left: 4px;
+    font-size: 11px;             /* 小さめ文字 */
+    color: #999;                 /* 灰色 */
 }
 
-/* =========================================
-   【返信フォーム】
-   ========================================= */
+/* ------------------------------
+   返信フォーム
+   ------------------------------ */
 .reply-form {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 10px;
+    display: flex;               /* 横並び配置 */
+    align-items: center;         /* 縦中央揃え */
+    gap: 8px;                    /* 要素間の間隔 */
+    margin-top: 12px;            /* 上に余白 */
 }
 
 .reply-form textarea {
-    flex: 1;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    padding: 6px;
-    font-size: 14px;
-    resize: vertical;
+    flex: 1;                     /* 横幅を自動調整 */
+    border: 1px solid #aaa;      /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    padding: 6px;                /* 内側余白 */
+    font-size: 14px;             /* 標準サイズ */
+    resize: vertical;            /* 縦方向にのみリサイズ可 */
 }
 
 .reply-form button {
-    padding: 6px 12px;
-    border: 1px solid #333;
-    border-radius: 4px;
-    background: #f5f5f5;
-    cursor: pointer;
-    white-space: nowrap;
+    padding: 6px 12px;           /* 内側余白 */
+    border: 1px solid #333;      /* 枠線 */
+    border-radius: 4px;          /* 角丸 */
+    background: #f5f5f5;         /* 背景色 */
+    cursor: pointer;             /* カーソル変更 */
 }
 
 .reply-form button:hover {
-    background: #e0e0e0;
+    background: #e0e0e0;         /* ホバー時色変更 */
 }
 
-/* =========================================
-   【ページネーション】
-   ========================================= */
+/* ------------------------------
+   ページネーション
+   ------------------------------ */
 .pagination {
-    text-align: center;
-    margin: 30px 0;
+    text-align: center;          /* 中央寄せ配置 */
+    margin: 30px 0;              /* 上下に余白 */
 }
 
 .pagination a,
 .pagination strong {
-    display: inline-block;
-    padding: 6px 10px;
-    margin: 0 3px;
-    border: 1px solid #aaa;
-    border-radius: 3px;
-    text-decoration: none;
-    color: #222;
+    display: inline-block;       /* インラインブロック配置 */
+    padding: 6px 10px;           /* 内側余白 */
+    margin: 0 3px;               /* 間隔 */
+    border: 1px solid #aaa;      /* 枠線 */
+    border-radius: 3px;          /* 角丸 */
+    text-decoration: none;       /* 下線を消す */
+    color: #222;                 /* 文字色 */
 }
 
 .pagination strong {
-    background: #e0e0e0;
+    background: #e0e0e0;         /* 現在ページを強調背景 */
 }
 
-/* =========================================
-   【ソート選択メニュー】
-   ========================================= */
-.sort-controls {
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-.sort-controls label {
-    font-weight: bold;
-    margin-right: 6px;
+/* ------------------------------
+   ソートセレクト（並び替え）
+   ------------------------------ */
+.sort-controls-inline {
+    display: flex;               /* 横並び配置 */
+    align-items: center;         /* 縦中央揃え */
+    gap: 6px;                    /* 要素間の間隔 */
 }
 
 .sort-select {
-    padding: 6px 10px;
-    border: 1px solid #666;
-    border-radius: 4px;
-    font-size: 14px;
-    background: #fff;
-    cursor: pointer;
+    padding: 6px 10px;           /* 内側余白 */
+    border: 1px solid #666;      /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    background: #fff;            /* 背景白 */
+    font-size: 14px;             /* 文字サイズ */
+    cursor: pointer;             /* カーソル変更 */
 }
 
 .sort-select:hover {
-    background: #f5f5f5;
+    background: #f5f5f5;         /* ホバー時背景変更 */
 }
 
-
-/* =========================================
-   【エラーメッセージ】
-   ========================================= */
+/* ------------------------------
+   エラーメッセージ
+   ------------------------------ */
 .error {
-    color: #b00020;
-    text-align: center;
+    color: #b00020;              /* 赤文字（エラー強調） */
+    text-align: center;          /* 中央寄せ配置 */
+    margin-top: 20px;            /* 上に余白 */
 }

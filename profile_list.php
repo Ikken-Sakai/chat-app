@@ -10,16 +10,6 @@ require_login();
     <title>プロフィール一覧</title>
     <link rel="stylesheet" href="style_profiles.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        /* プロフィール表示用の簡易スタイル */
-        .profile-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 5px; position: relative; }
-        .profile-item h3 { margin-top: 0; margin-bottom: 10px; }
-        .profile-item p { margin: 5px 0; }
-        .profile-item .edit-link { position: absolute; top: 15px; right: 15px; }
-        .pagination { margin-top: 20px; text-align: center; }
-        .pagination a, .pagination strong { margin: 0 5px; padding: 5px 8px; text-decoration: none; border: 1px solid #ddd; }
-        .pagination strong { background-color: #eee; }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -75,7 +65,6 @@ require_login();
             try {
                 // APIに注文を出すためのURLを作る (ソート順とページ番号も伝える)
                 const url = `${API_ENDPOINT}&sort=${currentSort}&order=${currentOrder}&page=${currentPage}`;
-                console.log('Fetching Profiles:', url); // デバッグ用にURLを確認
                 
                 // APIに注文(fetch)を出す (awaitでJSONが届くまで待つ)
                 const response = await fetch(url);
@@ -104,7 +93,6 @@ require_login();
                 if (typeof data.current_user_id === 'number') { 
                     loggedInUserId = data.current_user_id; // あったら箱に入れる
                 } else { 
-                    console.warn('APIからの応答に current_user_id が含まれていません。'); 
                 }
 
                 // ページネーションに必要な情報を取り出す
@@ -158,7 +146,7 @@ require_login();
                 const isOwner = (loggedInUserId !== null && profile.user_id === loggedInUserId); //自分のプロフィールかを判定する (ログインIDと比較)
                 // 自分のであれば、「編集」ボタンのHTMLを作る (そうでなければ空文字)
                 const editLink = isOwner ? `
-                    <a href="edit_profile.php" class="btn btn-sm btn-secondary edit-link">編集</a>
+                    <a href="edit_profile.php" class="btn edit-link">編集</a>
                 ` : ''; 
 
                 // プロフィール情報を表示するHTMLを組み立てる
@@ -211,8 +199,6 @@ require_login();
         function updatePaginationUI(totalPages, currentPage) {
             // まず表示エリアを空にする
             $pagination.innerHTML = ''; 
-            // 1ページしかないなら何も表示しない
-            if (totalPages <= 1) return; 
             
             // 「前へ」リンクを作る (もし1ページ目じゃなければ)
             if (currentPage > 1) {
@@ -221,7 +207,7 @@ require_login();
             
             // 1ページ目から最後のページまで、ページ番号リンクを作る (forループ)
             for (let i = 1; i <= totalPages; i++) {
-                // createPageLink さんにリンク作りをお願いする (今表示中のページは isCurrent = true で渡す)
+                // createPageLinkにリンク作成指示 (今表示中のページは isCurrent = true で渡す)
                 $pagination.appendChild(createPageLink(i, i, i === currentPage));
             }
             

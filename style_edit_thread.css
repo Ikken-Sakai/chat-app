@@ -1,169 +1,160 @@
-/* =========================================
-   投稿編集ページ (edit_thread.php)
-   ========================================= */
+/* =========================================================
+   投稿編集ページ用スタイル
+   ========================================================= */
 
-/* --- ページ全体設定 --- */
+/* ------------------------------
+   ページ全体
+   ------------------------------ */
 body {
     font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-    background-color: #ffffff;
-    color: #222;
-    margin: 0;
-    padding: 0;
+    background-color: #ffffff;   /* 背景を白に統一 */
+    color: #222;                 /* 標準文字色（やや濃いグレー） */
+    margin: 0;                   /* ページ外余白なし */
+    padding: 0;                  /* ページ内余白なし */
 }
 
-/* --- コンテナ全体 --- */
+/* ------------------------------
+   コンテナ（中央寄せ）
+   ------------------------------ */
 .container {
-    width: 90%;
-    max-width: 700px;
-    margin: 60px auto;
-    text-align: center;
+    width: 90%;                  /* 横幅を全体の90%に */
+    max-width: 700px;            /* 最大幅を700pxに制限 */
+    margin: 60px auto;           /* 上下60px・左右中央寄せ */
+    text-align: center;          /* 中央寄せ配置 */
 }
 
-/* --- ページタイトル --- */
+/* ------------------------------
+   ページタイトル
+   ------------------------------ */
 h1 {
-    font-size: 36px;
-    font-weight: bold;
-    margin-bottom: 35px;
+    text-align: center;          /* 中央寄せ配置 */
+    font-size: 36px;             /* 大きめの文字サイズ */
+    font-weight: bold;           /* 太字で強調 */
+    margin-bottom: 35px;         /* 下に余白 */
 }
 
-/* --- タイトル欄（右側で幅を広く取る） --- */
-.title-input {
-    flex: 1;                  /* 残り幅いっぱいに伸ばす */
-    padding: 8px 10px;
-    border: 1px solid #333;
-    border-radius: 4px;
-    font-size: 14px;
-    box-sizing: border-box;
-    background-color: #f4f4f4; /* 読み取り専用のためグレー */
-    color: #666;
-    cursor: not-allowed;
-}
-
-/* --- メッセージ表示エリア --- */
+/* ------------------------------
+   メッセージエリア
+   ------------------------------ */
 #message-area {
-    margin-bottom: 15px;
-    color: #444;
+    color: #444;                 /* 通知などは落ち着いたグレー */
+    margin-bottom: 15px;         /* 下に余白 */
+    text-align: center;          /* 中央寄せ */
 }
 
-/* --- フォーム全体 --- */
+/* ------------------------------
+   フォーム全体
+   ------------------------------ */
 form {
-    border: 1.5px solid #333; /* 全体の枠線 */
-    border-radius: 6px;       /* 角丸 */
-    background: #fff;
-    padding: 30px;
-    text-align: left;         /* 入力欄を左寄せ */
+    border: 1.5px solid #333;    /* 濃いグレーの枠線 */
+    border-radius: 6px;          /* 角を丸く */
+    background: #fff;            /* 背景白 */
+    padding: 30px;               /* 内側余白 */
+    text-align: left;            /* 入力欄を左寄せ */
 }
 
-/* --- 各入力ブロック --- */
+/* ------------------------------
+   入力ブロック共通
+   ------------------------------ */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 20px;         /* 各項目間の余白 */
 }
 
-/* --- ラベル（項目名） --- */
+/* ------------------------------
+   ラベル（項目名）
+   ------------------------------ */
 label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 6px;
+    display: block;              /* ラベルを独立行に配置 */
+    font-weight: bold;           /* 太字で項目名を強調 */
+    margin-bottom: 6px;          /* 下に少し余白 */
 }
 
-/* --- タイトル入力欄（読み取り専用） --- */
-input[readonly] {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #999;
-    border-radius: 4px;
-    background-color: #f4f4f4; /* 編集不可の見た目 */
-    color: #666;
-    cursor: not-allowed;
-    font-size: 14px;
-    box-sizing: border-box;
-}
-
-/* --- 投稿内容入力欄 --- */
-textarea {
-    width: 100%;
-    min-height: 150px; /* 適度な高さ */
-    padding: 8px 10px;
-    border: 1px solid #333;
-    border-radius: 4px;
-    font-size: 14px;
-    resize: vertical; /* 高さ変更OK */
-    box-sizing: border-box;
-}
-
-/* --- ボタン配置（中央寄せ・横並び） --- */
-form .btn-primary,
-form .btn-secondary {
-    display: inline-block;
-    padding: 8px 24px;
-    font-size: 16px;
-    border: 1.5px solid #333;
-    border-radius: 4px;
-    background: #fff;
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 20px;
-}
-
-/* --- ホバー時の色変更 --- */
-form .btn-primary:hover,
-form .btn-secondary:hover {
-    background-color: #e0e0e0;
-}
-
-/* --- ボタンエリア全体 --- */
-form {
-    display: block; /* 以前の flex を解除 */
-    text-align: center; /* 全体を中央寄せ */
-}
-
-form .btn-area {
-    display: flex;
-    justify-content: center; /* 中央揃え */
-    gap: 40px; /* ボタン間のスペース */
-    margin-top: 25px;
-}
-
-/* --- ボタンの横並び --- */
-.btn-primary,
-.btn-secondary {
-    display: inline-block;
-    padding: 8px 24px;
-    font-size: 16px;
-    border: 1.5px solid #333;
-    border-radius: 4px;
-    background: #fff;
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-/* --- ユーザー名ボックス--- */
+/* ------------------------------
+   投稿者名エリア
+   ------------------------------ */
 .form-header {
-    display: flex;
-    align-items: center;      /* 縦位置を中央にそろえる */
-    gap: 10px;                /* 間隔を確保 */
-    margin-bottom: 20px;
+    display: flex;               /* 横並び配置 */
+    align-items: center;         /* 縦中央揃え */
+    gap: 10px;                   /* 間隔を確保 */
+    margin-bottom: 20px;         /* 下に余白 */
 }
 
 .username-box {
-    font-weight: bold;
-    border: 1px solid #333;
-    border-radius: 4px;
-    background-color: #f0f0f0;
-    padding: 6px 12px;
-    min-width: 100px;
-    text-align: center;
+    font-weight: bold;           /* ユーザー名を強調 */
+    border: 1px solid #333;      /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    background-color: #f0f0f0;   /* 背景グレー（編集不可感） */
+    padding: 6px 12px;           /* 内側余白 */
+    min-width: 100px;            /* 幅固定 */
+    text-align: center;          /* 中央寄せ配置 */
 }
 
+/* ------------------------------
+   タイトル欄（読み取り専用）
+   ------------------------------ */
+input[readonly],
+.title-input {
+    width: 100%;                 /* 横幅いっぱいに */
+    padding: 8px 10px;           /* 内側余白 */
+    border: 1px solid #999;      /* 少し淡いグレーの枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    background-color: #f4f4f4;   /* 背景グレーで編集不可を表現 */
+    color: #666;                 /* 薄め文字色 */
+    font-size: 14px;             /* 標準サイズ */
+    box-sizing: border-box;      /* paddingを幅に含める */
+    cursor: not-allowed;         /* マウスカーソルを禁止マークに */
+}
 
-/* --- エラーメッセージ --- */
+/* ------------------------------
+   投稿内容入力欄
+   ------------------------------ */
+textarea {
+    width: 100%;                 /* 横幅いっぱい */
+    min-height: 150px;           /* 適度な高さ */
+    padding: 8px 10px;           /* 内側余白 */
+    border: 1px solid #333;      /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    font-size: 14px;             /* 標準文字サイズ */
+    resize: vertical;            /* 縦方向にのみサイズ変更可 */
+    box-sizing: border-box;      /* paddingを幅に含める */
+    line-height: 1.5;            /* 行間を少し広めに */
+}
+
+/* ------------------------------
+   ボタンエリア
+   ------------------------------ */
+.btn-area {
+    display: flex;               /* 横並び配置 */
+    justify-content: center;     /* 中央寄せ配置 */
+    gap: 40px;                   /* ボタン間隔 */
+    margin-top: 25px;            /* 上に余白 */
+}
+
+/* 共通ボタンスタイル */
+.btn-primary,
+.btn-secondary {
+    display: inline-block;       /* ボタンを横並びに */
+    padding: 8px 24px;           /* 内側余白（広め） */
+    font-size: 16px;             /* やや大きめ文字 */
+    border: 1.5px solid #333;    /* 枠線 */
+    border-radius: 4px;          /* 角を丸く */
+    background: #fff;            /* 背景白 */
+    color: #000;                 /* 文字黒 */
+    text-decoration: none;       /* 下線なし */
+    cursor: pointer;             /* ホバー時にポインター */
+}
+
+.btn-primary:hover,
+.btn-secondary:hover {
+    background: #e0e0e0;         /* ホバー時に淡いグレー */
+}
+
+/* ------------------------------
+   エラーメッセージ
+   ------------------------------ */
 .error {
-    color: #b00020;
-    text-align: center;
-    font-weight: bold;
-    margin-top: 10px;
+    color: #b00020;              /* 赤文字でエラー強調 */
+    text-align: center;          /* 中央寄せ */
+    font-weight: bold;           /* 太字で強調 */
+    margin-top: 10px;            /* 上に余白 */
 }

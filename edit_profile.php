@@ -71,7 +71,7 @@ $hobby_options = [
             </div>
 
             <div class="btn-area">
-                <a href="profile_list.php" class="btn btn-secondary">プロフィール一覧に戻る</a>
+                <a href="profile_list.php" class="btn btn-secondary" id="backBtn">プロフィール一覧に戻る</a>
                 <button type="submit" id="submitBtn" class="btn btn-primary">更新</button>
             </div>
         </form>
@@ -206,6 +206,14 @@ $hobby_options = [
             }
         });
     });
+    // --- 戻るボタンの確認アラート ---
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', (event) => {
+            const confirmLeave = confirm('変更内容は保存されません。本当に一覧に戻りますか？');
+            if (!confirmLeave) event.preventDefault();
+        });
+    }
     </script>
 </body>
 </html>

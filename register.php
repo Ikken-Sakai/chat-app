@@ -78,16 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="success"><?= htmlspecialchars($success_message, ENT_QUOTES, 'UTF-8') ?></div>
 
       <script>
-          // ページ読み込み完了後にアラートを表示し、OKを押したらリダイレクト
-          window.onload = function() {
-              alert('ユーザー登録が完了しました。');
-              window.location.href = 'thread_list.php'; // スレッド一覧ページへ遷移
-          };
+        setTimeout(() => {
+            window.location.href = 'thread_list.php';
+        }, 1500);
+
       </script>
       
       <style>
-          form { display: none; } 
-          .login-container > a.btn-secondary { display: none; } /* 戻るボタンも非表示 */
+        form[action=""] { display: none; }
       </style>
 
     <?php else: ?>
@@ -111,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </form>
 
       <form action="login.php" method="get">
-        <button type="submit" class="register-btn">戻る</button>
+        <button type="submit" class="btn btn-secondary">戻る</button>
       </form>
     <?php endif; ?>
   </div>

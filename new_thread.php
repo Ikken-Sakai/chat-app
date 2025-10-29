@@ -36,7 +36,7 @@ $token = $_SESSION['form_token'];
             <!-- CSRFトークン（セキュリティ対策用） -->
             <input type="hidden" name="token" value="<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
             <div class="button-group">
-                <a href="thread_list.php" class="btn btn-back">一覧に戻る</a>
+                <a href="thread_list.php" class="btn btn-back" id="backBtn">一覧に戻る</a>
                 <button type="submit" id="submitBtn" class="btn">作成する</button>
             </div>
         </form>
@@ -47,6 +47,18 @@ $token = $_SESSION['form_token'];
     const form = document.getElementById('newThreadForm');
     const submitBtn = document.getElementById('submitBtn');
     const errorMessage = document.getElementById('error-message');
+
+    // --- 戻るボタンの確認アラート処理 ---
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function(event) {
+            const confirmLeave = confirm('入力内容は保存されません。本当に一覧に戻りますか？');
+            if (!confirmLeave) {
+                event.preventDefault(); // 「キャンセル」が選ばれた場合はページ遷移を止める
+            }
+        });
+    }
+
 
     form.addEventListener('submit', async (event) => {
         // デフォルトのフォーム送信（画面遷移）を中止

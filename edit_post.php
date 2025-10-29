@@ -35,7 +35,7 @@ require_login();
             </div>
 
             <div class="btn-area">
-                <a href="thread_list.php" class="btn btn-secondary">一覧に戻る</a>
+                <a href="thread_list.php" class="btn btn-secondary" id="backBtn">一覧に戻る</a>
                 <button type="submit" id="submitBtn" class="btn btn-primary">更新する</button>
             </div>
         </form>
@@ -130,6 +130,18 @@ require_login();
             }
         });
     });
+
+        // --- 戻るボタンの確認アラート ---
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', function(event) {
+            const confirmLeave = confirm('変更内容は保存されません。本当に一覧に戻りますか？');
+            if (!confirmLeave) {
+                event.preventDefault(); // キャンセル時に遷移を止める
+            }
+        });
+    }
+
     </script>
 </body>
 </html>

@@ -187,6 +187,9 @@ require_login();
                 currentOrder = orderBy;
                 currentPage = 1;
 
+                //選択したソート条件を localStorage に保存
+                localStorage.setItem('profile_sort', selectedValue);
+
                 fetchAndDisplayProfiles(); // 再取得
             });
         }
@@ -267,13 +270,32 @@ require_login();
             $refreshBtn.addEventListener('click', fetchAndDisplayProfiles); 
         }
 
-        // 最初の実行
+        // ページ読み込み時に実行される処理
         // ブラウザがページのHTMLを全部読み終わったら (DOMContentLoaded)
         // 最初にfetchAndDisplayProfilesを呼んで、プロフィール一覧を表示させる
         document.addEventListener('DOMContentLoaded', () => {
+            const savedSort = localStorage.getItem('profile_sort');// 前回選んだソート設定をブラウザから取得
+            const sortSelect = document.getElementById('sortSelect');// ソートセレクトボックスを取得
+            // 保存済みの設定があれば、画面と内部状態を復元
+            if (savedSort && sortSelect) {
+                sortSelect.value = savedSort; // セレクトボックスを前回選択に戻す
+
+                // "username_asc" → sortBy="username", orderBy="asc"
+                const parts = savedSort.split('_');
+                const sortBy = parts.slice(0, -1).join('_');
+                const orderBy = parts.slice(-1)[0];
+
+                currentSort = sortBy;
+                currentOrder = orderBy;
+            }
+
+            // プロフィール一覧を取得・表示
             fetchAndDisplayProfiles();
+
+            // ソート変更イベントを有効化
             setupSortSelect();
         });
+
 
     </script>
 </body>

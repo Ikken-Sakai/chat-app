@@ -241,6 +241,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                 //console.log(`sort=${currentSort}, order=${currentOrder}`);
                 //console.log(`送信URL: ${API_ENDPOINT}?sort=${currentSort}&order=${currentOrder}&page=${currentPage}`);
 
+                localStorage.setItem('thread_sort', selectedValue); //ソート設定を localStorage に保存
+
                 fetchAndDisplayThreads(); // 再読み込み
             });
         }
@@ -745,11 +747,32 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
              });
         }
 
-        // ページが読み込まれたときに最初のデータ取得を実行
+        //ページ読み込み時に実行される処理
         document.addEventListener('DOMContentLoaded', () => {
+            const savedSort = localStorage.getItem('thread_sort');// 保存されているソート設定（例："created_at_desc"）を取得
+            const sortSelect = document.getElementById('sortSelect');// ソートセレクト要素を取得
+
+            //保存済みの設定があり、セレクトボックスが存在する場合のみ処理
+            if (savedSort && sortSelect) {
+                sortSelect.value = savedSort; // 画面上のセレクトボックスを前回の設定に戻す
+
+                // 値を分解して、ソート項目と昇順・降順をそれぞれ取り出す
+                const parts = savedSort.split('_');
+                const orderBy = parts.pop();  // 最後の要素（"asc"または"desc"）
+                const sortBy = parts.join('_'); // 残りを結合して "created_at" などにする
+
+                // 現在のソート条件を設定
+                currentSort = sortBy;
+                currentOrder = orderBy;
+            }
+
+            // スレッド一覧を読み込み・表示
             fetchAndDisplayThreads();
-            setupSortButtons(); 
+
+            // ソートセレクトのイベントを有効化（選択変更で並び替え可能に）
+            setupSortButtons();
         });
+
     </script>
 </body>
 </html>

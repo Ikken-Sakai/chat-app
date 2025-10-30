@@ -456,9 +456,12 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             //loggedInUserIdがnullでないことも確認
             const isReplyOwner = (loggedInUserId !== null && reply.user_id === loggedInUserId);
 
+            // 改行を<br>に変換した上で、XSS対策を保持
+            const formattedBody = escapeHTML(reply.body).replace(/\n/g, '<br>');
+
             //escapeHTMLを通してXSS攻撃対策
             replyElement.innerHTML = `
-                <p>${escapeHTML(reply.body)}</p>
+                <p>${formattedBody}</p>
                 <div class="reply-meta">
                     <div class="reply-left">
                         <span>投稿者: ${escapeHTML(reply.username)}</span>

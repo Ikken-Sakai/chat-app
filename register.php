@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </style>
 
     <?php else: ?>
-      <form method="post" action="">
+      <form method="post" action="" autocomplete="off">
         <div class="form-group">
           <label for="username">ユーザー名</label>
           <input type="text" id="username" name="username" required>

@@ -31,6 +31,8 @@
 ======================================================================
 */
 
+define ('IS_API_REQUEST', true);
+
 //--------------------------------------------------------------
 // 共通設定の読み込みと初期設定
 //--------------------------------------------------------------
@@ -50,6 +52,14 @@ $method = $_SERVER['REQUEST_METHOD'];
 // GET: プロフィール/投稿の取得系エンドポイント（分岐は上部コメントを参照）
 if ($method === 'GET') {
     try {
+        // GET: セッションチェック用
+        // （「戻る」ボタンなどで、API通信の前にセッション状態を確認するために使う）
+        if (isset($_GET['action']) && $_GET['action'] === 'check_session') {
+            // auth.php の require_login() を通過していればセッションは有効
+            echo json_encode(['status' => 'ok', 'message' => 'Session is active.']);
+            exit;
+        }
+
         // URLに "?action=get_my_profile" が指定されていれば「自分のプロフィール」を返す
         // GET: ログイン中ユーザーのプロフィール取得
         if (isset($_GET['action']) && $_GET['action'] === 'get_my_profile') {

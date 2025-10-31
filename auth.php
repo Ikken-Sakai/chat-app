@@ -14,7 +14,7 @@ session_start();
 // アイドルタイムアウトの制限時間設定
 //-----------------------------
 // （例）10分＝600秒。テスト時は短縮・延長
-const IDLE_LIMIT = 100 * 60;
+const IDLE_LIMIT =  30;
 
 //-----------------------------
 // ログイン必須関数
@@ -50,7 +50,16 @@ if (($now - $last) > IDLE_LIMIT) {
 
     // セッション破棄 + ログインページへ戻す
     session_destroy();
-    header('Location: login.php?expired=1');
+    // APIリクエストかどうかで応答を切り替える
+    if (defined('IS_API_REQUEST') && IS_API_REQUEST) {
+        // APIリクエストの場合：401 UnauthorizedヘッダーとJSONエラーを返す
+        header('HTTP/1.1 401 Unauthorized');
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['error' => 'セッションがタイムアウトしました。']);
+    } else {
+        // 通常のページアクセスの場合：ログインページへリダイレクト
+        header('Location: login.php?expired=1');
+    }
     exit;
 }
 

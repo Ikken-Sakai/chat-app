@@ -41,6 +41,27 @@ require_login();
         // actionパラメータ追加で、プロフィール情報をAPIにGETリクエスト
         const API_ENDPOINT = 'api.php?action=get_profiles'; 
 
+        /**
+         * fetchのラッパー関数(元ある関数を包む新しい関数)。セッションタイムアウト(401)を共通処理する。
+         * @param {string} url - リクエスト先のURL
+         * @param {object} [options] - fetchに渡すオプション (method, bodyなど)
+         * @returns {Promise<Response>} fetchのレスポンスオブジェクト
+         */
+        async function apiFetch(url, options) {
+            const response = await fetch(url, options);
+
+            // 応答が401 Unauthorizedなら、セッション切れと判断
+            if (response.status === 401) {
+                alert('セッションタイム切れのため、ログイン画面にもどります');
+                window.location.href = 'login.php'; // ログインページにリダイレクト
+                
+                //エラーをthrowする代わりに、後続の処理を停止させる
+                return new Promise(() => {});
+            }
+
+            return response; // 正常な場合はそのままレスポンスを返す
+        }
+
         // HTML要素の取得
         // 画面上の部品にJavaScriptからアクセスできるように、変数に格納
         const $loadingMessage = document.getElementById('loading-message'); // 「読み込み中...」メッセージ表示エリア
@@ -67,7 +88,7 @@ require_login();
                 const url = `${API_ENDPOINT}&sort=${currentSort}&order=${currentOrder}&page=${currentPage}`;
                 
                 // APIに注文(fetch)を出す (awaitでJSONが届くまで待つ)
-                const response = await fetch(url);
+                const response = await apiFetch(url);
 
                 // エラーが来たら、処理を中断してエラーを表示
                 if (!response.ok) { 
@@ -294,6 +315,30 @@ require_login();
 
             // ソート変更イベントを有効化
             setupSortSelect();
+
+            // プロフィールリスト(.profile-list)内でクリックが発生した場合の処理
+            $profileList.addEventListener('click', async (e) => {
+                // 押されたのが編集リンク(.edit-link)か判定
+                if (e.target.classList.contains('edit-link')) {
+                    // 1. デフォルトのリンク遷移を停止
+                    e.preventDefault(); 
+                    
+                    const destinationUrl = e.target.href; // リンク先URLを取得
+                    if (!destinationUrl) return;
+
+                    try {
+                        // 2. セッションが有効かチェック
+                        await apiFetch('api.php?action=check_session');
+                        
+                        // 3. セッションが有効なら、編集ページへ遷移
+                        window.location.href = destinationUrl;
+
+                    } catch (error) {
+                        console.error("Session check failed:", error);
+                        alert("エラーが発生しました: " + error.message);
+                    }
+                }
+            });
         });
 
 

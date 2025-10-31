@@ -42,105 +42,144 @@ require_login();
     </div>
 
     <script>
-    // HTMLの読み込みが完了したら、すぐに処理を開始する
-    document.addEventListener('DOMContentLoaded', async () => {
-        // これから何度も使うHTML要素を変数に入れておく
-        const form = document.getElementById('editPostForm');
-        const messageArea = document.getElementById('message-area');
-        const submitBtn = document.getElementById('submitBtn');
+        /**
+         * fetchのラッパー関数(元ある関数を包む新しい関数)。セッションタイムアウト(401)を共通処理する。
+         * @param {string} url - リクエスト先のURL
+         * @param {object} [options] - fetchに渡すオプション (method, bodyなど)
+         * @returns {Promise<Response>} fetchのレスポンスオブジェクト
+         */
+        async function apiFetch(url, options) {
+            const response = await fetch(url, options);
 
-        //編集対象の投稿データを取得してフォームに表示 ---
-
-        //URLから編集対象の投稿IDを取得する (例: edit_post.php?id=12 -> 12を取得)
-        const params = new URLSearchParams(window.location.search);
-        const postId = params.get('id');
-
-        //IDが指定されていなければ、エラーを表示して処理を中断
-        if (!postId) {
-            messageArea.innerHTML = '<p class="error">編集する投稿のIDが指定されていません。</p>';
-            return;
-        }
-
-        try {
-            //APIに問い合わせて、現在の投稿データを取得する
-            //GETリクエストで ?id=... を付けてAPIを呼び出す
-            const response = await fetch(`api.php?id=${postId}`);
-            const post = await response.json();
-
-            // APIからエラーが返された場合 (権限がないなど)
-            if (!response.ok) {
-                // response.okでない場合、json()で取得したエラーメッセージを投げる
-                throw new Error(post.error || `HTTPエラー: ${response.status}`);
+            // 応答が401 Unauthorizedなら、セッション切れと判断
+            if (response.status === 401) {
+                alert('セッションタイム切れのため、ログイン画面にもどります');
+                window.location.href = 'login.php'; // ログインページにリダイレクト
+                
+                //エラーをthrowする代わりに、後続の処理を停止させる
+                return new Promise(() => {});
             }
 
-            //取得したデータをフォームの各欄に設定する
-            form.querySelector('input[name="id"]').value = post.id;
-            form.querySelector('input[name="title"]').value = post.title;
-            form.querySelector('textarea[name="body"]').value = post.body;
-
-            //読み込みメッセージを消して、フォームを表示する
-            messageArea.style.display = 'none';
-            form.style.display = 'block';
-
-        } catch (error) {
-            // データの取得中にエラーが発生した場合
-            messageArea.innerHTML = `<p class="error">データの読み込みに失敗しました: ${error.message}</p>`;
+            return response; // 正常な場合はそのままレスポンスを返す
         }
 
-        //フォームが送信されたときの処理を定義 ---
+        // HTMLの読み込みが完了したら、すぐに処理を開始する
+        document.addEventListener('DOMContentLoaded', async () => {
+            // これから何度も使うHTML要素を変数に入れておく
+            const form = document.getElementById('editPostForm');
+            const messageArea = document.getElementById('message-area');
+            const submitBtn = document.getElementById('submitBtn');
 
-        // form要素でsubmitイベント（更新ボタンのクリック）が発生したら、以下の処理を実行する
-        form.addEventListener('submit', async (event) => {
-            //デフォルトのフォーム送信（ページリロード）を中止
-            event.preventDefault();
+            //編集対象の投稿データを取得してフォームに表示 ---
 
-            //ボタンを無効化し、ユーザーに処理中であることを示す
-            submitBtn.disabled = true;
-            submitBtn.textContent = '更新中...';
+            //URLから編集対象の投稿IDを取得する (例: edit_post.php?id=12 -> 12を取得)
+            const params = new URLSearchParams(window.location.search);
+            const postId = params.get('id');
 
-            //フォームから更新データを準備する
-            const dataToPost = {
-                id: form.querySelector('input[name="id"]').value, // 隠しフィールドから投稿IDを取得
-                body: form.querySelector('textarea[name="body"]').value // テキストエリアから新しい本文を取得
-            };
+            //IDが指定されていなければ、エラーを表示して処理を中断
+            if (!postId) {
+                messageArea.innerHTML = '<p class="error">編集する投稿のIDが指定されていません。</p>';
+                return;
+            }
 
             try {
-                // APIに更新データをPOSTで送信する
-                const updateResponse = await fetch('api.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dataToPost) // JavaScriptオブジェクトをJSON文字列に変換
-                });
-                
-                const result = await updateResponse.json();
-                if (!updateResponse.ok) {
-                    throw new Error(result.error || `HTTPエラー: ${updateResponse.status}`);
+                //APIに問い合わせて、現在の投稿データを取得する
+                //GETリクエストで ?id=... を付けてAPIを呼び出す
+                const response = await apiFetch(`api.php?id=${postId}`);
+                const post = await response.json();
+
+                // APIからエラーが返された場合 (権限がないなど)
+                if (!response.ok) {
+                    // response.okでない場合、json()で取得したエラーメッセージを投げる
+                    throw new Error(post.error || `HTTPエラー: ${response.status}`);
                 }
 
-                //成功したら、メッセージを表示して一覧ページに戻る
-                //alert('投稿を更新しました。');
-                window.location.href = 'thread_list.php';
+                //取得したデータをフォームの各欄に設定する
+                form.querySelector('input[name="id"]').value = post.id;
+                form.querySelector('input[name="title"]').value = post.title;
+                form.querySelector('textarea[name="body"]').value = post.body;
+
+                //読み込みメッセージを消して、フォームを表示する
+                messageArea.style.display = 'none';
+                form.style.display = 'block';
 
             } catch (error) {
-                // 更新処理中にエラーが発生した場合
-                alert('エラー: ' + error.message);
-                // ボタンを再度有効化して、再送信できるようにする
-                submitBtn.disabled = false;
-                submitBtn.textContent = '更新する';
+                // データの取得中にエラーが発生した場合
+                messageArea.innerHTML = `<p class="error">データの読み込みに失敗しました: ${error.message}</p>`;
             }
-        });
-    });
 
-        // --- 戻るボタンの確認アラート ---
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) {
-        backBtn.addEventListener('click', function(event) {
-            const confirmLeave = confirm('変更内容は保存されません。本当に一覧に戻りますか？');
-            if (!confirmLeave) {
-                event.preventDefault(); // キャンセル時に遷移を止める
-            }
+            //フォームが送信されたときの処理を定義 ---
+
+            // form要素でsubmitイベント（更新ボタンのクリック）が発生したら、以下の処理を実行する
+            form.addEventListener('submit', async (event) => {
+                //デフォルトのフォーム送信（ページリロード）を中止
+                event.preventDefault();
+
+                //ボタンを無効化し、ユーザーに処理中であることを示す
+                submitBtn.disabled = true;
+                submitBtn.textContent = '更新中...';
+
+                //フォームから更新データを準備する
+                const dataToPost = {
+                    id: form.querySelector('input[name="id"]').value, // 隠しフィールドから投稿IDを取得
+                    body: form.querySelector('textarea[name="body"]').value // テキストエリアから新しい本文を取得
+                };
+
+                try {
+                    // APIに更新データをPOSTで送信する
+                    const updateResponse = await apiFetch('api.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dataToPost) // JavaScriptオブジェクトをJSON文字列に変換
+                    });
+                    
+                    const result = await updateResponse.json();
+                    if (!updateResponse.ok) {
+                        throw new Error(result.error || `HTTPエラー: ${updateResponse.status}`);
+                    }
+
+                    //成功したら、メッセージを表示して一覧ページに戻る
+                    //alert('投稿を更新しました。');
+                    window.location.href = 'thread_list.php';
+
+                } catch (error) {
+                    // 更新処理中にエラーが発生した場合
+                    alert('エラー: ' + error.message);
+                    // ボタンを再度有効化して、再送信できるようにする
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '更新する';
+                }
+            });
         });
-    }
+
+        //戻るボタンの確認アラート
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', async (event) => {
+                // 1. デフォルトの <a href="..."> によるページ遷移をまず止める
+                event.preventDefault(); 
+
+                try {
+                    // 2. まずセッションが有効かダミーAPIで確認する
+                    // (apiFetchがセッション切れを検知したら、アラートを出してリダイレクトし、ここで処理が停止する)
+                    await apiFetch('api.php?action=check_session');
+
+                    // 3. セッションが有効だった場合のみ、確認ダイアログを出す
+                    const confirmLeave = confirm('変更内容は保存されません。本当に一覧に戻りますか？');
+                    if (confirmLeave) {
+                        // OKなら本来のリンク先(href属性の値)に遷移する
+                        window.location.href = backBtn.href; 
+                    }
+                    // キャンセルなら何もしない
+
+                } catch (error) {
+                    // apiFetchがエラー（Session expired以外）を投げた場合
+                    // (セッション切れの場合はapiFetch内でリダイレクト処理が始まり、ここは実行されない)
+                    console.error("Session check failed:", error);
+                    alert("エラーが発生しました: " + error.message);
+                }
+            });
+        }
 
     </script>
 </body>

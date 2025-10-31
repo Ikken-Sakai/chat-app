@@ -81,6 +81,27 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
         // 初期設定と共通変数
         const API_ENDPOINT = 'api.php'; // API呼び出し先
 
+        /**
+         * fetchのラッパー関数(元ある関数を包む新しい関数)。セッションタイムアウト(401)を共通処理する。
+         * @param {string} url - リクエスト先のURL
+         * @param {object} [options] - fetchに渡すオプション (method, bodyなど)
+         * @returns {Promise<Response>} fetchのレスポンスオブジェクト
+         */
+        async function apiFetch(url, options) {
+            const response = await fetch(url, options);
+
+            // 応答が401 Unauthorizedなら、セッション切れと判断
+            if (response.status === 401) {
+                alert('セッションタイム切れのため、ログイン画面にもどります');
+                window.location.href = 'login.php'; // ログインページにリダイレクト
+                
+                //エラーをthrowする代わりに、後続の処理を停止させる
+                return new Promise(() => {});
+            }
+
+            return response; // 正常な場合はそのままレスポンスを返す
+        }
+
         // HTML要素を取得
         const $loadingMessage = document.getElementById('loading-message');
         const $threadList = document.getElementById('thread-list'); //HTMLの箱(掲示板全体)
@@ -102,7 +123,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             try {
                 //APIエンドポイントにソートとページパラメータを追加
                 const url = `${API_ENDPOINT}?sort=${currentSort}&order=${currentOrder}&page=${currentPage}`;
-                const response = await fetch(url); //apiにGETリクエスト送信、一覧取得
+                const response = await apiFetch(url); //apiにGETリクエスト送信、一覧取得
 
                 if (!response.ok) {
                     throw new Error(`HTTPエラー: ${response.status}`);
@@ -193,7 +214,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     </div>
                     <div class="action-buttons">
                     ${thread.user_id === loggedInUserId ? `
-                        <button class="btn-edit" onclick="location.href='edit_post.php?id=${thread.id}'">編集</button>
+                        <button class="btn-edit" data-href="edit_post.php?id=${thread.id}">編集</button>
                         <button class="btn-delete delete-btn" data-post-id="${thread.id}">削除</button>
                     ` : ''}
                     </div>
@@ -345,7 +366,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             if (!forceOpen && repliesContainer.style.display === 'block') {
                 // 閉じる前に最新の返信数を取得してボタンの件数を更新
                 try {
-                    const countRes = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, {
+                    const countRes = await apiFetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, {
                         cache: "no-store" // キャッシュを無効化して最新データを取得
                     });
                     if (countRes.ok) {
@@ -377,7 +398,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             repliesContainer.style.display = 'block';
 
             try {
-                const response = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, {
+                const response = await apiFetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, {
                     cache: "no-store"
                 });
                 if (!response.ok) throw new Error(`HTTPエラー: ${response.status}`);
@@ -417,7 +438,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
                     showAllBtn.addEventListener('click', async () => {
                         try {
-                            const newResponse = await fetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, { cache: "no-store" });
+                            const newResponse = await apiFetch(`${API_ENDPOINT}?parent_id=${parentPostId}&_=${Date.now()}`, { cache: "no-store" });
                             const newData = await newResponse.json();
                             const latestReplies = newData.replies || newData;
 
@@ -516,7 +537,7 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             try {
                 //APIにPOST送信（bodyとparentpost_idを送る）
                 // api.php の POST 内「(C)返信投稿処理」が実行される
-                const response = await fetch(API_ENDPOINT, {
+                const response = await apiFetch(API_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -567,29 +588,70 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
          * 「削除」ボタンが押されたときのみ削除処理を呼び出す。
          * （イベントデリゲーションで、新しく生成されたボタンにも対応）
          */
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-btn')) { // 削除ボタンが押されたかを判定
-                const button = e.target;                     // 押された削除ボタンを取得
-                const postId = button.dataset.postId;        // ボタンに埋め込まれた投稿IDを取得
-                deletePost(postId, button);                  // 削除処理を呼び出し
+        // ページ全体にクリックイベントを設定し、
+        // 「削除」「編集」ボタンが押されたときに対応
+        document.addEventListener('click', async (e) => {
+            
+            // 削除ボタン (.delete-btn) の処理 (スレッド本体・返信 共通)
+            if (e.target.classList.contains('delete-btn')) {
+                const button = e.target;
+                const postId = button.dataset.postId;
+                
+                // 1. セッションチェックを先に行う
+                try {
+                    await apiFetch('api.php?action=check_session');
+
+                    // 2. セッションが有効なら確認ダイアログを表示
+                    if (confirm('本当にこの投稿を削除しますか？')) {
+                        // 3. OKなら削除処理 (confirm抜き) を実行
+                        deletePost(postId, button); // ステップ1で修正したdeletePostを呼び出す
+                    }
+                    // キャンセルなら何もしない
+                } catch (error) {
+                    // (apiFetchがセッション切れ（401）を処理します)
+                    console.error("Session check failed:", error);
+                    if (error.message !== 'Session expired') {
+                        alert("エラーが発生しました: " + error.message);
+                    }
+                }
+            }
+
+            // メインスレッドの編集ボタン (.btn-edit) の処理
+            if (e.target.classList.contains('btn-edit')) {
+                e.preventDefault(); // 念のためデフォルトの動作を停止
+                
+                const destinationUrl = e.target.dataset.href; // data-hrefからURLを取得
+                if (!destinationUrl) return;
+
+                try {
+                    // 1. セッションが有効かチェック
+                    await apiFetch('api.php?action=check_session');
+                    
+                    // 2. セッションが有効なら、編集ページへ遷移
+                    window.location.href = destinationUrl;
+
+                } catch (error) {
+                    // (apiFetchがセッション切れ（401）を処理します)
+                    console.error("Session check failed:", error);
+                    if (error.message !== 'Session expired') {
+                        alert("エラーが発生しました: " + error.message);
+                    }
+                }
             }
         });
-
         /**
          * 投稿を削除する処理を行う非同期関数
          * @param {string} postId - 削除する投稿のID
          * @param {HTMLElement} buttonElement - クリックされた削除ボタン要素
          */
         async function deletePost(postId, buttonElement) {
-            if (!confirm('本当にこの投稿を削除しますか？')) return; // 確認ダイアログでキャンセルされたら処理中止
-
             //処理中はボタンを無効化、テキストを変更
             buttonElement.disabled = true;         // 二重クリック防止のためボタンを無効化
             buttonElement.textContent = '削除中...'; // ユーザーに処理中であることを表示
 
             try {
                 //APIに削除リクエスト送信
-                const response = await fetch(API_ENDPOINT, { // APIに非同期通信で削除リクエストを送る
+                const response = await apiFetch(API_ENDPOINT, { // APIに非同期通信で削除リクエストを送る
                     method: 'POST',                          // POSTメソッドを使用
                     headers: { 'Content-Type': 'application/json' }, // JSON形式で送信
                     body: JSON.stringify({
@@ -655,84 +717,110 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             }
         }
 
-
-
         // ▼ 返信の編集処理（非同期）
+        // (2つ目のクリックリスナー)
         document.addEventListener('click', async function (e) {
-        if (e.target.classList.contains('edit-reply-btn')) {
-            const replyDiv = e.target.closest('.reply-item');
-            const replyId = e.target.dataset.replyId;
-            const bodyP = replyDiv.querySelector('p');
-            const oldText = bodyP.textContent;
-
-            // 編集用フォームに変換
-            const textarea = document.createElement('textarea');
-            textarea.value = oldText;
-            textarea.classList.add('edit-textarea');
-            bodyP.replaceWith(textarea);
-
-            // 保存ボタンを追加
-            const saveBtn = document.createElement('button');
-            saveBtn.textContent = '保存';
-            saveBtn.classList.add('btn', 'btn-sm', 'btn-primary');
-            e.target.after(saveBtn);
-            e.target.disabled = true;
-
-            saveBtn.addEventListener('click', async () => {
-                const newText = textarea.value.trim();
-                if (!newText) {
-                    alert('本文を入力してください');
-                    return;
-                }
+            
+            // 返信の編集ボタン (.edit-reply-btn) の処理
+            if (e.target.classList.contains('edit-reply-btn')) {
+                e.preventDefault(); // デフォルト動作を停止
 
                 try {
-                    const res = await fetch(API_ENDPOINT, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'edit_reply',
-                            reply_id: replyId,
-                            body: newText
-                        })
-                    });
+                    // 1. セッションチェックを先に行う
+                    await apiFetch('api.php?action=check_session');
 
-                    const result = await res.json();
-                    if (result.success) {
-                        // 成功時、本文を即時更新
-                        const newBody = document.createElement('p');
-                        newBody.textContent = result.new_body;
-                        textarea.replaceWith(newBody);
+                    // 2. セッションが有効なら、元の編集UI処理を実行
+                    const replyDiv = e.target.closest('.reply-item');
+                    const replyId = e.target.dataset.replyId;
+                    const bodyP = replyDiv.querySelector('p');
 
-                        // 編集済みラベルを追加
-                        const editedLabel = document.createElement('small');
-                        editedLabel.classList.add('edited-label');
-                        editedLabel.textContent = '（編集済み）';
+                    // 既に編集モード（textareaが存在）なら何もしない
+                    if (replyDiv.querySelector('.edit-textarea')) {
+                        return;
+                    }
+                    
+                    // 元の本文を取得 (元のコードのロジックに従う)
+                    const oldText = bodyP.textContent; 
 
-                        // 返信メタ情報（右側）を取得
-                        const replyRight = replyDiv.querySelector('.reply-right');
-                        if (replyRight) {
-                            const dateSpan = replyRight.querySelector('.reply-date');
-                            if (dateSpan && !replyRight.querySelector('.edited-label')) {
-                                dateSpan.before(editedLabel);
-                            }
+                    // 編集用フォームに変換
+                    const textarea = document.createElement('textarea');
+                    textarea.value = oldText;
+                    textarea.classList.add('edit-textarea');
+                    bodyP.replaceWith(textarea);
+
+                    // 保存ボタンを追加
+                    const saveBtn = document.createElement('button');
+                    saveBtn.textContent = '保存';
+                    saveBtn.classList.add('btn', 'btn-sm', 'btn-primary');
+                    e.target.after(saveBtn); // 「編集」ボタンの直後に「保存」を配置
+                    e.target.disabled = true; // 「編集」ボタンを無効化
+
+                    // 「保存」ボタンが押された時の処理
+                    saveBtn.addEventListener('click', async () => {
+                        const newText = textarea.value.trim();
+                        if (!newText) {
+                            alert('本文を入力してください');
+                            return;
                         }
 
-                        saveBtn.remove();
-                        e.target.disabled = false;
-                    } else {
-                        alert(result.error || '更新に失敗しました');
+                        // (保存時のAPI通信は apiFetch を使用)
+                        try {
+                            const res = await apiFetch(API_ENDPOINT, { // ★ apiFetchを使用
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'edit_reply',
+                                    reply_id: replyId,
+                                    body: newText
+                                })
+                            });
+
+                            const result = await res.json();
+                            if (result.success) {
+                                // 成功時、本文を即時更新
+                                const newBody = document.createElement('p');
+                                // new_bodyはXSSエスケープ済みなのでtextContentで安全に設定
+                                newBody.textContent = result.new_body; 
+                                textarea.replaceWith(newBody);
+
+                                // 編集済みラベルを追加
+                                const editedLabel = document.createElement('small');
+                                editedLabel.classList.add('edited-label');
+                                editedLabel.textContent = '（編集済み）';
+
+                                const replyRight = replyDiv.querySelector('.reply-right');
+                                if (replyRight) {
+                                    const dateSpan = replyRight.querySelector('.reply-date');
+                                    if (dateSpan && !replyRight.querySelector('.edited-label')) {
+                                        dateSpan.before(editedLabel);
+                                    }
+                                }
+
+                                saveBtn.remove(); // 保存ボタンを削除
+                                e.target.disabled = false; // 編集ボタンを再度有効化
+                            } else {
+                                alert(result.error || '更新に失敗しました');
+                            }
+                        } catch (err) {
+                            // (apiFetchがセッション切れを処理)
+                            if (err.message !== 'Session expired') {
+                                console.error('通信エラー:', err);
+                                alert('サーバー通信に失敗しました');
+                            }
+                        }
+                    }); //-- saveBtn listener end
+
+                } catch (error) {
+                    // (apiFetchがセッション切れ（401）を処理します)
+                    console.error("Session check failed:", error);
+                    if (error.message !== 'Session expired') {
+                        alert("エラーが発生しました: " + error.message);
                     }
-                } catch (err) {
-                    console.error('通信エラー:', err);
-                    alert('サーバー通信に失敗しました');
                 }
-            });
-        }
-    });
+            }
+        });
 
 
-
-        // XSS対策（文字列エスケープ）
         /**
          * XSS対策のためのHTMLエスケープ関数
          */
@@ -749,14 +837,18 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
         //ページ読み込み時に実行される処理
         document.addEventListener('DOMContentLoaded', () => {
-            const savedSort = localStorage.getItem('thread_sort');// 保存されているソート設定（例："created_at_desc"）を取得
-            const sortSelect = document.getElementById('sortSelect');// ソートセレクト要素を取得
 
-            //保存済みの設定があり、セレクトボックスが存在する場合のみ処理
+            const savedSort = localStorage.getItem('thread_sort');
+
+            // ソートセレクト要素を取得
+            const sortSelect = document.getElementById('sortSelect');
+
+            // 🔸 保存済みの設定があり、セレクトボックスが存在する場合のみ処理
             if (savedSort && sortSelect) {
                 sortSelect.value = savedSort; // 画面上のセレクトボックスを前回の設定に戻す
 
                 // 値を分解して、ソート項目と昇順・降順をそれぞれ取り出す
+                // 例: "created_at_desc" → sortBy="created_at", orderBy="desc"
                 const parts = savedSort.split('_');
                 const orderBy = parts.pop();  // 最後の要素（"asc"または"desc"）
                 const sortBy = parts.join('_'); // 残りを結合して "created_at" などにする

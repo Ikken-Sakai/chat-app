@@ -78,142 +78,184 @@ $hobby_options = [
     </div>
 
     <script>
-    // 設定
-    const API_ENDPOINT_GET = 'api.php?action=get_my_profile'; // 自分のプロフィール取得用APIの住所
-    const API_ENDPOINT_POST = 'api.php'; // 更新用APIの住所 (actionパラメータは送信データに含める)
+        // 設定
+        const API_ENDPOINT_GET = 'api.php?action=get_my_profile'; // 自分のプロフィール取得用APIの住所
+        const API_ENDPOINT_POST = 'api.php'; // 更新用APIの住所 (actionパラメータは送信データに含める)
 
-    // イベントリスナーの設定
-    // HTMLの読み込みが完了したら、指定した関数 (async () => { ... }) を実行する
-    document.addEventListener('DOMContentLoaded', async () => {
-        // HTML要素の取得
-        // これから使うHTML要素を変数に格納
-        const form = document.getElementById('profileEditForm');           // フォーム全体
-        const messageArea = document.getElementById('message-area');       // メッセージ表示エリア
-        const submitBtn = document.getElementById('submitBtn');            // 「更新する」ボタン
-        const usernameInput = document.getElementById('username');         // ユーザー名入力欄
-        const departmentInput = document.getElementById('department');     // 部署入力欄
-        const commentTextarea = document.getElementById('comment');        // コメント入力欄
-        // フォームの中から、name属性が"hobbies[]"であるinput要素(チェックボックス)をすべて取得
-        const hobbyCheckboxes = form.querySelectorAll('input[name="hobbies[]"]');
 
-        // データ取得とフォーム初期化
-        // API通信を try...catch で囲む
-        try {
-            console.log('Fetching my profile...'); // デバッグ用: 処理開始をコンソールに表示
-            // GET APIに自分のプロフィールをfetchし、応答(response)を待つ(await)
-            const response = await fetch(API_ENDPOINT_GET);
-            
-            // APIからエラーが返ってきた場合 (HTTPステータスが200番台でない)
-            if (!response.ok) {
-                 // エラー応答の中身(JSON)を解析してみる
-                 const errorData = await response.json();
-                 // エラーメッセージがあればそれ、なければHTTPステータスでエラーを投げる
-                 throw new Error(errorData.error || `HTTPエラー: ${response.status}`);
-            }
-            // 返されたJSONを解析してプロフィール情報を取り出す
-            const profile = await response.json();
-            console.log('Profile data received:', profile); // デバッグ用: 受け取ったデータを確認
+        /**
+         * fetchのラッパー関数(元ある関数を包む新しい関数)。セッションタイムアウト(401)を共通処理する。
+         * @param {string} url - リクエスト先のURL
+         * @param {object} [options] - fetchに渡すオプション (method, bodyなど)
+         * @returns {Promise<Response>} fetchのレスポンスオブジェクト
+         */
+        async function apiFetch(url, options) {
+            const response = await fetch(url, options);
 
-            // フォームに取得した値を設定
-            // ユーザー名 (|| '' は、もしデータが空だったら空文字にする、という意味)
-            usernameInput.value = profile.username || '';
-            // 部署
-            departmentInput.value = profile.department || '';
-            // コメント
-            commentTextarea.value = profile.comment || '';
-
-            // 趣味の設定 (データベースには '読書,ゲーム' のようにカンマ区切りで保存されている想定)
-            if (profile.hobbies) { // もし趣味の情報があれば
-                // split(',') でカンマを区切り文字として文字列を配列に分解する
-                // 例: "読書,ゲーム" -> ["読書", "ゲーム"]
-                const selectedHobbies = profile.hobbies.split(','); 
-                // すべての趣味チェックボックスについて、1つずつ確認する (forEachループ)
-                hobbyCheckboxes.forEach(checkbox => {
-                    // もし、そのチェックボックスの値(value)が、分解した配列の中に含まれていたら
-                    if (selectedHobbies.includes(checkbox.value)) {
-                        checkbox.checked = true; // チェックを入れる
-                    }
-                });
+            // 応答が401 Unauthorizedなら、セッション切れと判断
+            if (response.status === 401) {
+                alert('セッションタイム切れのため、ログイン画面にもどります');
+                window.location.href = 'login.php'; // ログインページにリダイレクト
+                
+                //エラーをthrowする代わりに、後続の処理を停止させる
+                return new Promise(() => {});
             }
 
-            // 読み込みメッセージを隠し、フォームを表示する
-            messageArea.style.display = 'none'; // メッセージエリアを非表示に
-            form.style.display = 'block';     // フォームを表示状態に
-
-        } catch (error) {
-            // もし try ブロックの途中でエラーが発生したら、ここが実行される
-            console.error('プロファイル読み込みエラー:', error); // エラー内容をコンソールに表示
-            // ユーザーにエラーメッセージを表示
-            messageArea.innerHTML = `<p class="error">プロファイル情報の読み込みに失敗しました: ${error.message}</p>`;
+            return response; // 正常な場合はそのままレスポンスを返す
         }
 
-        // フォーム送信処理
-        // フォームで送信(submit)イベントが発生したら、指定した関数 (async (event) => { ... }) を実行する
-        form.addEventListener('submit', async (event) => {
-            // formが持つデフォルトの送信動作(ページリロード)を止める
-            event.preventDefault(); 
+        // イベントリスナーの設定
+        // HTMLの読み込みが完了したら、指定した関数 (async () => { ... }) を実行する
+        document.addEventListener('DOMContentLoaded', async () => {
+            // HTML要素の取得
+            // これから使うHTML要素を変数に格納
+            const form = document.getElementById('profileEditForm');           // フォーム全体
+            const messageArea = document.getElementById('message-area');       // メッセージ表示エリア
+            const submitBtn = document.getElementById('submitBtn');            // 「更新する」ボタン
+            const usernameInput = document.getElementById('username');         // ユーザー名入力欄
+            const departmentInput = document.getElementById('department');     // 部署入力欄
+            const commentTextarea = document.getElementById('comment');        // コメント入力欄
+            // フォームの中から、name属性が"hobbies[]"であるinput要素(チェックボックス)をすべて取得
+            const hobbyCheckboxes = form.querySelectorAll('input[name="hobbies[]"]');
 
-            // ボタンを一時的に押せないようにし、「更新中...」と表示する
-            submitBtn.disabled = true;
-            submitBtn.textContent = '更新中...';
-
-            //フォームから更新後のデータを集める
-            const selectedHobbies = []; // 空の配列を用意
-            // すべての趣味チェックボックスを調べる
-            hobbyCheckboxes.forEach(checkbox => {
-                if (checkbox.checked) { // もしチェックが入っていたら
-                    selectedHobbies.push(checkbox.value); // 配列に追加する
-                }
-            });
-
-            // APIに送るためのデータ(JavaScriptオブジェクト)を作成
-            const dataToPost = {
-                action: 'update_profile', // 「プロフィール更新」の指示を伝える
-                department: departmentInput.value, // 部署入力欄の値
-                hobbies: selectedHobbies,          // チェックされた趣味の配列
-                comment: commentTextarea.value     // コメント入力欄の値
-            };
-            console.log('Sending data:', dataToPost); // デバッグ用: 送信するデータを確認
-
-            // APIにデータを送信する (失敗する可能性があるので try...catch)
+            // データ取得とフォーム初期化
+            // API通信を try...catch で囲む
             try {
-                // POST APIに更新依頼(fetch)を出す
-                const updateResponse = await fetch(API_ENDPOINT_POST, {
-                    method: 'POST', // POSTメソッドで送信
-                    headers: { 'Content-Type': 'application/json' }, // 送るデータはJSON形式指定
-                    body: JSON.stringify(dataToPost) // JavaScriptオブジェクトをJSON文字列に変換して送る
-                });
+                console.log('Fetching my profile...'); // デバッグ用: 処理開始をコンソールに表示
+                // GET APIに自分のプロフィールをfetchし、応答(response)を待つ(await)
+                const response = await apiFetch(API_ENDPOINT_GET);
                 
-                // APIからの応答(JSON)を解析
-                const result = await updateResponse.json();
-                // もしAPIからエラーが返ってきたら、エラーを投げる
-                if (!updateResponse.ok) {
-                    throw new Error(result.error || `HTTPエラー: ${updateResponse.status}`);
+                // APIからエラーが返ってきた場合 (HTTPステータスが200番台でない)
+                if (!response.ok) {
+                    // エラー応答の中身(JSON)を解析してみる
+                    const errorData = await response.json();
+                    // エラーメッセージがあればそれ、なければHTTPステータスでエラーを投げる
+                    throw new Error(errorData.error || `HTTPエラー: ${response.status}`);
+                }
+                // 返されたJSONを解析してプロフィール情報を取り出す
+                const profile = await response.json();
+                console.log('Profile data received:', profile); // デバッグ用: 受け取ったデータを確認
+
+                // フォームに取得した値を設定
+                // ユーザー名 (|| '' は、もしデータが空だったら空文字にする、という意味)
+                usernameInput.value = profile.username || '';
+                // 部署
+                departmentInput.value = profile.department || '';
+                // コメント
+                commentTextarea.value = profile.comment || '';
+
+                // 趣味の設定 (データベースには '読書,ゲーム' のようにカンマ区切りで保存されている想定)
+                if (profile.hobbies) { // もし趣味の情報があれば
+                    // split(',') でカンマを区切り文字として文字列を配列に分解する
+                    // 例: "読書,ゲーム" -> ["読書", "ゲーム"]
+                    const selectedHobbies = profile.hobbies.split(','); 
+                    // すべての趣味チェックボックスについて、1つずつ確認する (forEachループ)
+                    hobbyCheckboxes.forEach(checkbox => {
+                        // もし、そのチェックボックスの値(value)が、分解した配列の中に含まれていたら
+                        if (selectedHobbies.includes(checkbox.value)) {
+                            checkbox.checked = true; // チェックを入れる
+                        }
+                    });
                 }
 
-                //成功した場合
-                //alert('プロフィールを更新しました。'); // ポップアップでメッセージ表示
-                window.location.href = 'profile_list.php'; // プロフィール一覧ページに戻る
+                // 読み込みメッセージを隠し、フォームを表示する
+                messageArea.style.display = 'none'; // メッセージエリアを非表示に
+                form.style.display = 'block';     // フォームを表示状態に
 
             } catch (error) {
-                // もし更新処理中にエラーが発生したら
-                console.error('プロフィール更新エラー:', error); // エラーをコンソールに表示
-                // ユーザーにエラーを通知
-                alert('エラー: プロフィールの更新に失敗しました。\n' + error.message);
-                // ボタンを押せる状態に戻す
-                submitBtn.disabled = false;
-                submitBtn.textContent = '更新する';
+                // もし try ブロックの途中でエラーが発生したら、ここが実行される
+                console.error('プロファイル読み込みエラー:', error); // エラー内容をコンソールに表示
+                // ユーザーにエラーメッセージを表示
+                messageArea.innerHTML = `<p class="error">プロファイル情報の読み込みに失敗しました: ${error.message}</p>`;
             }
+
+            // フォーム送信処理
+            // フォームで送信(submit)イベントが発生したら、指定した関数 (async (event) => { ... }) を実行する
+            form.addEventListener('submit', async (event) => {
+                // formが持つデフォルトの送信動作(ページリロード)を止める
+                event.preventDefault(); 
+
+                // ボタンを一時的に押せないようにし、「更新中...」と表示する
+                submitBtn.disabled = true;
+                submitBtn.textContent = '更新中...';
+
+                //フォームから更新後のデータを集める
+                const selectedHobbies = []; // 空の配列を用意
+                // すべての趣味チェックボックスを調べる
+                hobbyCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) { // もしチェックが入っていたら
+                        selectedHobbies.push(checkbox.value); // 配列に追加する
+                    }
+                });
+
+                // APIに送るためのデータ(JavaScriptオブジェクト)を作成
+                const dataToPost = {
+                    action: 'update_profile', // 「プロフィール更新」の指示を伝える
+                    department: departmentInput.value, // 部署入力欄の値
+                    hobbies: selectedHobbies,          // チェックされた趣味の配列
+                    comment: commentTextarea.value     // コメント入力欄の値
+                };
+                console.log('Sending data:', dataToPost); // デバッグ用: 送信するデータを確認
+
+                // APIにデータを送信する (失敗する可能性があるので try...catch)
+                try {
+                    // POST APIに更新依頼(fetch)を出す
+                    const updateResponse = await apiFetch(API_ENDPOINT_POST, {
+                        method: 'POST', // POSTメソッドで送信
+                        headers: { 'Content-Type': 'application/json' }, // 送るデータはJSON形式指定
+                        body: JSON.stringify(dataToPost) // JavaScriptオブジェクトをJSON文字列に変換して送る
+                    });
+                    
+                    // APIからの応答(JSON)を解析
+                    const result = await updateResponse.json();
+                    // もしAPIからエラーが返ってきたら、エラーを投げる
+                    if (!updateResponse.ok) {
+                        throw new Error(result.error || `HTTPエラー: ${updateResponse.status}`);
+                    }
+
+                    //成功した場合
+                    //alert('プロフィールを更新しました。'); // ポップアップでメッセージ表示
+                    window.location.href = 'profile_list.php'; // プロフィール一覧ページに戻る
+
+                } catch (error) {
+                    // もし更新処理中にエラーが発生したら
+                    console.error('プロフィール更新エラー:', error); // エラーをコンソールに表示
+                    // ユーザーにエラーを通知
+                    alert('エラー: プロフィールの更新に失敗しました。\n' + error.message);
+                    // ボタンを押せる状態に戻す
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '更新する';
+                }
+            });
         });
-    });
-    // --- 戻るボタンの確認アラート ---
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) {
-        backBtn.addEventListener('click', (event) => {
-            const confirmLeave = confirm('変更内容は保存されません。本当に一覧に戻りますか？');
-            if (!confirmLeave) event.preventDefault();
-        });
-    }
+        // --- 戻るボタンの確認アラート ---
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', async (event) => {
+                // 1. デフォルトの <a href="..."> によるページ遷移をまず止める
+                event.preventDefault(); 
+
+                try {
+                    // 2. まずセッションが有効かダミーAPIで確認する
+                    // (apiFetchがセッション切れを検知したら、アラートを出してリダイレクトし、ここで処理が停止する)
+                    await apiFetch('api.php?action=check_session');
+
+                    // 3. セッションが有効だった場合のみ、確認ダイアログを出す
+                    const confirmLeave = confirm('変更内容は保存されません。本当に一覧に戻りますか？');
+                    if (confirmLeave) {
+                        // OKなら本来のリンク先(href属性の値)に遷移する
+                        window.location.href = backBtn.href; 
+                    }
+                    // キャンセルなら何もしない
+
+                } catch (error) {
+                    // apiFetchがエラー（Session expired以外）を投げた場合
+                    // (セッション切れの場合はapiFetch内でリダイレクト処理が始まり、ここは実行されない)
+                    console.error("Session check failed:", error);
+                    alert("エラーが発生しました: " + error.message);
+                }
+            });
+        }
     </script>
 </body>
 </html>

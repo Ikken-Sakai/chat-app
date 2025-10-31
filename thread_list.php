@@ -505,7 +505,11 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                     </div>
                 </div>
             `;
-
+            // 編集用に、元の改行(\n)を含むテキストをdata属性に保存
+            const bodyP = replyElement.querySelector('p');
+            if (bodyP) {
+                bodyP.dataset.rawBody = reply.body;
+            }
             return replyElement;
         }
 
@@ -717,47 +721,54 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
             }
         }
 
-        // ▼ 返信の編集処理（非同期）
-        // (2つ目のクリックリスナー)
+        // ▼ 返信の編集// ▼ 返信の編集処理（非同期）
+        // ページ全体でクリックを監視し、動的に生成されたボタンに対応（イベント委任）
         document.addEventListener('click', async function (e) {
             
-            // 返信の編集ボタン (.edit-reply-btn) の処理
+            // 返信の編集ボタン (.edit-reply-btn) が押されたか判定
             if (e.target.classList.contains('edit-reply-btn')) {
-                e.preventDefault(); // デフォルト動作を停止
+                
+                // リンクやフォームのデフォルト動作を停止
+                e.preventDefault(); 
 
                 try {
-                    // 1. セッションチェックを先に行う
+                    // 1. まずセッションが有効かチェック
+                    // (セッション切れの場合、apiFetch関数内でアラートとリダイレクトが発生)
                     await apiFetch('api.php?action=check_session');
 
-                    // 2. セッションが有効なら、元の編集UI処理を実行
-                    const replyDiv = e.target.closest('.reply-item');
-                    const replyId = e.target.dataset.replyId;
-                    const bodyP = replyDiv.querySelector('p');
+                    // 2. セッションが有効なら、編集UIの準備
+                    const replyDiv = e.target.closest('.reply-item'); // 返信全体を囲むDIV
+                    const replyId = e.target.dataset.replyId;         // 編集対象のID
+                    const bodyP = replyDiv.querySelector('p');        // 本文<p>タグ
 
-                    // 既に編集モード（textareaが存在）なら何もしない
+                    // 既に編集モード（textareaが作られている）なら、二重処理を防ぐ
                     if (replyDiv.querySelector('.edit-textarea')) {
                         return;
                     }
                     
-                    // 元の本文を取得 (元のコードのロジックに従う)
-                    const oldText = bodyP.textContent; 
+                    // <p>タグの表示テキスト(textContent)ではなく、
+                    // data属性に保存した「改行(\n)を含む」元のテキストを取得
+                    const oldText = bodyP.dataset.rawBody; 
 
-                    // 編集用フォームに変換
+                    // <p>タグを<textarea>に置き換える
                     const textarea = document.createElement('textarea');
-                    textarea.value = oldText;
+                    textarea.value = oldText; // これで改行が<textarea>に反映される
                     textarea.classList.add('edit-textarea');
-                    bodyP.replaceWith(textarea);
+                    bodyP.replaceWith(textarea); // <p> が <textarea> に入れ替わる
 
-                    // 保存ボタンを追加
+                    // 「保存」ボタンを動的に作成
                     const saveBtn = document.createElement('button');
                     saveBtn.textContent = '保存';
                     saveBtn.classList.add('btn', 'btn-sm', 'btn-primary');
-                    e.target.after(saveBtn); // 「編集」ボタンの直後に「保存」を配置
-                    e.target.disabled = true; // 「編集」ボタンを無効化
+                    e.target.after(saveBtn);  // 「編集」ボタンの直後に「保存」を配置
+                    e.target.disabled = true; // 「編集」ボタンを一時的に無効化
 
-                    // 「保存」ボタンが押された時の処理
+                    // --- 「保存」ボタンが押された時の処理 ---
                     saveBtn.addEventListener('click', async () => {
+                        // <textarea>から新しいテキストを取得
                         const newText = textarea.value.trim();
+                        
+                        // 空欄チェック
                         if (!newText) {
                             alert('本文を入力してください');
                             return;
@@ -765,7 +776,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
 
                         // (保存時のAPI通信は apiFetch を使用)
                         try {
-                            const res = await apiFetch(API_ENDPOINT, { // ★ apiFetchを使用
+                            // APIに「返信編集」をリクエスト
+                            const res = await apiFetch(API_ENDPOINT, { 
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -775,32 +787,54 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                                 })
                             });
 
-                            const result = await res.json();
+                            const result = await res.json(); // APIからの結果
+                            
+                            // 編集成功時
                             if (result.success) {
-                                // 成功時、本文を即時更新
+                                // <textarea>を、更新後の本文<p>タグに置き換える
                                 const newBody = document.createElement('p');
-                                // new_bodyはXSSエスケープ済みなのでtextContentで安全に設定
-                                newBody.textContent = result.new_body; 
-                                textarea.replaceWith(newBody);
+                                // new_bodyはXSS対策済みなので textContent で安全に設定
+                                // APIから返された「エスケープ済みの本文」を取得
+                                const escapedBody = result.new_body; 
 
-                                // 編集済みラベルを追加
+                                // \n (改行コード) を <br> (HTMLタグ) に変換
+                                const formattedBody = escapedBody.replace(/\n/g, '<br>');
+
+                                // textContent ではなく innerHTML で設定
+                                newBody.innerHTML = formattedBody;
+
+                                textarea.replaceWith(newBody); // <textarea> が <p> に入れ替わる
+
+                                // 編集用に、元の「\n」を含むテキストをdata属性に保存
+                                // (api.phpでtrim()されているため、newTextもtrim()されたものを使用)
+                                const newText = textarea.value.trim();
+                                newBody.dataset.rawBody = newText;
+
+                                // 「（編集済み）」ラベルを表示
                                 const editedLabel = document.createElement('small');
                                 editedLabel.classList.add('edited-label');
                                 editedLabel.textContent = '（編集済み）';
 
+                                // 投稿日時の前に追加
                                 const replyRight = replyDiv.querySelector('.reply-right');
                                 if (replyRight) {
                                     const dateSpan = replyRight.querySelector('.reply-date');
+                                    // ラベルがまだ無ければ追加
                                     if (dateSpan && !replyRight.querySelector('.edited-label')) {
                                         dateSpan.before(editedLabel);
                                     }
                                 }
 
-                                saveBtn.remove(); // 保存ボタンを削除
-                                e.target.disabled = false; // 編集ボタンを再度有効化
+                                // UIを元に戻す
+                                saveBtn.remove(); // 「保存」ボタンを削除
+                                e.target.disabled = false; // 「編集」ボタンを再度有効化
+                            
+                            // 編集失敗時
                             } else {
                                 alert(result.error || '更新に失敗しました');
                             }
+                        
+                        // 保存時の通信エラー
                         } catch (err) {
                             // (apiFetchがセッション切れを処理)
                             if (err.message !== 'Session expired') {
@@ -808,8 +842,9 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                                 alert('サーバー通信に失敗しました');
                             }
                         }
-                    }); //-- saveBtn listener end
+                    }); //-- 「保存」ボタンの処理ここまで --
 
+                // 編集開始時のセッションチェックエラー
                 } catch (error) {
                     // (apiFetchがセッション切れ（401）を処理します)
                     console.error("Session check failed:", error);
@@ -817,8 +852,8 @@ require_login(); // ログインしていない場合はlogin.phpにリダイレ
                         alert("エラーが発生しました: " + error.message);
                     }
                 }
-            }
-        });
+            } 
+        }); 
 
 
         /**
